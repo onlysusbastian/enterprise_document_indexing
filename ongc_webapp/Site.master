@@ -1,0 +1,152 @@
+<%@ Master Language="C#" AutoEventWireup="true" %>
+
+<!DOCTYPE html>
+<html lang="en">
+<head runat="server">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%: Page.Title %> - ONGC Portal</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <style>
+        * {
+            font-family: 'Public Sans', sans-serif;
+            box-sizing: border-box;
+            margin: 0; padding: 0;
+        }
+
+        body {
+            background-color: #ffffff;
+        }
+
+        /* Minimalist High-End Navbar Header Matching Your Screen precisely */
+        .ongc-foundation-header {
+            background-color: #ffffff;
+            padding: 25px 0;
+            border-bottom: 1px solid #f5f5f5;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.01);
+        }
+
+        .header-flex-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        /* Branding Block Placement */
+        .brand-logo-frame {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .brand-logo-frame img {
+            height: 75px; 
+            width: auto;
+            display: block;
+            image-rendering: -webkit-optimize-contrast;
+        }
+
+        /* Beautiful Minimalist Inline Navigation Menu */
+        .foundation-nav-list {
+            display: flex;
+            align-items: center;
+            list-style: none;
+            gap: 32px; /* Perfectly distributed tracking matching your target UI */
+            margin: 0;
+            padding: 0;
+        }
+
+        .foundation-nav-item a {
+            text-decoration: none;
+            color: #7a0616; /* Clean rich corporate maroon */
+            font-size: 1.05rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            letter-spacing: 0.2px;
+            padding: 8px 4px;
+            position: relative;
+        }
+
+        /* Clean interactive underline effect on hover */
+        .foundation-nav-item a:hover, .foundation-nav-item.active a {
+            color: #b00c24;
+            font-weight: 600;
+        }
+
+        /* Premium Minimalist Search Loop Icon vector placement */
+        .nav-search-icon {
+            color: #7a0616;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding-left: 5px;
+            background: none;
+            border: none;
+            outline: none;
+        }
+        
+        .nav-search-icon svg {
+            width: 26px;
+            height: 26px;
+            stroke-width: 2;
+            transition: transform 0.2s ease;
+        }
+
+        .nav-search-icon:hover svg {
+            transform: scale(1.08);
+            color: #b00c24;
+        }
+
+        /* Content Render Wrapper viewport block */
+        .main-portal-body {
+            min-height: 75vh;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <form runat="server">
+
+        <header class="ongc-foundation-header">
+            <div class="header-flex-container">
+                
+                <a href="Dashboard.aspx" class="brand-logo-frame">
+                    <img src="ongclogo.png" alt="ONGC Logo" />
+                </a>
+
+                <nav class="d-flex align-items-center">
+                    <ul class="foundation-nav-list">
+                        <li class="foundation-nav-item"><a href="Dashboard.aspx">Home</a></li>
+                        <li class="foundation-nav-item"><a href="About.aspx">About Us</a></li>
+                        <li class="foundation-nav-item"><a href="Indexing.aspx">Index Assets</a></li>
+                        <li class="foundation-nav-item"><a href="#">Action Plan</a></li>
+                        <li class="foundation-nav-item"><a href="#">Contact Us</a></li>
+                        <li class="foundation-nav-item"><a href="Login.aspx" style="font-weight: 700; color: #b00c24;">Sign Out</a></li>
+                    </ul>
+
+                    <button type="button" class="nav-search-icon ms-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </button>
+                </nav>
+
+            </div>
+        </header>
+
+        <main class="main-portal-body">
+            <div class="container-fluid px-0">
+                <asp:ContentPlaceHolder ID="MainContent" runat="server">
+                </asp:ContentPlaceHolder>
+            </div>
+        </main>
+
+    </form>
+</body>
+</html>

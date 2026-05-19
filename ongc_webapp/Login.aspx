@@ -1,50 +1,60 @@
-﻿<%@ Page Title="Login" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Login.aspx.cs" Inherits="ongc_webapp.Login" %>
+﻿<%@ Page Title="Login" Language="C#" AutoEventWireup="true" CodeBehind="Login.aspx.cs" Inherits="ongc_webapp.Login" %>
 
-<asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
+<!DOCTYPE html>
+<html lang="en">
+<head runat="server">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enterprise Portal Login - ONGC</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
     <style>
-        /* 1. HIDE MASTER NAVBAR COMPLETELY ON LOGIN PAGE */
-        /* This prevents duplicate logos and keeps the layout perfectly clean */
-        nav.navbar, .ongc-navbar, .navbar-nav, .btn-nav-login {
-            display: none !important;
+        * {
+            font-family: 'Public Sans', sans-serif;
+            box-sizing: border-box;
         }
 
-        /* 2. Main Center Wrapper - Fits the viewport cleanly without scrolling */
+        body {
+            background-color: #f8f9fa !important;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Centering Wrapper to fit perfectly on the screen */
         .login-page-wrapper {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 92vh; /* Centered beautifully vertically */
+            min-height: 100vh;
             padding: 20px;
             box-sizing: border-box;
         }
 
-        /* 3. Responsive Login Card Layout */
+        /* Premium Login Card Structure */
         .login-container-wrapper {
             display: flex;
             width: 100%;
-            max-width: 950px; /* Elegant desktop width */
-            height: 580px;    /* Compact height to prevent page scrolling */
+            max-width: 950px; 
+            height: 580px;    
             background: #fff;
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.12);
         }
 
-        /* Left Side: Shifting focus to show the plant and engineer */
+        /* Left Side Image Panel */
         .login-visual-side {
             flex: 1.1; 
             background: url('ongc_refinery.jpg') no-repeat;
             background-size: cover;
-            /* CRITICAL IMAGE POSITION FIX: Focuses on the right/bottom parts of the photo */
             background-position: 75% center; 
             position: relative;
-            
-            /* Sharp Rendering Tweaks */
             image-rendering: -webkit-optimize-contrast;
             image-rendering: crisp-edges;
         }
 
-        /* Clean overlay tint to anchor the corporate aesthetic */
         .login-visual-side::before {
             content: "";
             position: absolute;
@@ -53,7 +63,7 @@
             pointer-events: none;
         }
 
-        /* Right Side: Interactive Inputs Engine */
+        /* Right Side Input System */
         .login-form-side {
             flex: 0.9; 
             padding: 40px 45px;
@@ -78,7 +88,7 @@
             font-size: 1.75rem;
         }
 
-        /* Input Styling */
+        /* Form Custom Field Styling */
         .form-control-custom {
             border: 1.5px solid #E2E8F0;
             padding: 12px 14px;
@@ -116,10 +126,6 @@
             box-shadow: 0 6px 16px rgba(128, 0, 0, 0.23);
         }
 
-        .btn-ongc-submit:active {
-            transform: translateY(0);
-        }
-
         .forgot-link:hover {
             color: #800000 !important;
             text-decoration: underline !important;
@@ -131,57 +137,56 @@
             margin-top: 35px;
         }
 
-        /* Responsive Flow for small viewports */
         @media (max-width: 850px) {
             .login-container-wrapper {
                 height: auto;
                 max-width: 450px;
                 flex-direction: column;
             }
-            .login-visual-side {
-                display: none;
-            }
-            .login-form-side {
-                padding: 40px 30px;
-            }
+            .login-visual-side { display: none; }
+            .login-form-side { padding: 40px 30px; }
         }
     </style>
+</head>
+<body>
+    <form id="form1" runat="server">
+        <div class="login-page-wrapper">
+            <div class="login-container-wrapper">
+                
+                <div class="login-visual-side"></div>
 
-    <div class="login-page-wrapper">
-        <div class="login-container-wrapper">
-            
-            <div class="login-visual-side"></div>
+                <div class="login-form-side">
+                    <div class="text-center text-md-start">
+                        <img src="ongclogo.png" alt="ONGC Logo" class="ongc-brand-logo" />
+                        <h2 class="portal-title">Enterprise Portal</h2>
+                        <p class="text-muted mb-4" style="font-size: 0.95rem;">Management & Indexing System</p>
+                    </div>
 
-            <div class="login-form-side">
-                <div class="text-center text-md-start">
-                    <img src="ongclogo.png" alt="ONGC Logo" class="ongc-brand-logo" />
-                    <h2 class="portal-title">Enterprise Portal</h2>
-                    <p class="text-muted mb-4" style="font-size: 0.95rem;">Management & Indexing System</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary small" style="letter-spacing: 0.3px;">USER ID / CPF NUMBER</label>
+                        <asp:TextBox ID="txtUsername" runat="server" CssClass="form-control form-control-custom" placeholder="Enter your ID"></asp:TextBox>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary small" style="letter-spacing: 0.3px;">PASSWORD</label>
+                        <asp:TextBox ID="txtPassword" runat="server" CssClass="form-control form-control-custom" TextMode="Password" placeholder="••••••••"></asp:TextBox>
+                    </div>
+
+                    <div class="d-grid">
+                        <asp:Button ID="btnLogin" runat="server" Text="LOG IN" 
+                            CssClass="btn-ongc-submit" OnClick="btnLogin_Click" />
+                    </div>
+
+                    <div class="text-center text-md-start mt-3">
+                        <a href="#" class="forgot-link text-decoration-none small text-muted">Forgot Password?</a>
+                    </div>
+
+                    <p class="copyright-text text-center text-md-start">
+                        &copy; <%: DateTime.Now.Year %> Oil and Natural Gas Corporation Limited. All rights reserved.
+                    </p>
                 </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold text-secondary small" style="letter-spacing: 0.3px;">USER ID / CPF NUMBER</label>
-                    <asp:TextBox ID="txtUsername" runat="server" CssClass="form-control form-control-custom" placeholder="Enter your ID"></asp:TextBox>
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label fw-bold text-secondary small" style="letter-spacing: 0.3px;">PASSWORD</label>
-                    <asp:TextBox ID="txtPassword" runat="server" CssClass="form-control form-control-custom" TextMode="Password" placeholder="••••••••"></asp:TextBox>
-                </div>
-
-                <div class="d-grid">
-                    <asp:Button ID="btnLogin" runat="server" Text="LOG IN" 
-                        CssClass="btn-ongc-submit" OnClick="btnLogin_Click" />
-                </div>
-
-                <div class="text-center text-md-start mt-3">
-                    <a href="#" class="forgot-link text-decoration-none small text-muted">Forgot Password?</a>
-                </div>
-
-                <p class="copyright-text text-center text-md-start">
-                    &copy; <%: DateTime.Now.Year %> Oil and Natural Gas Corporation Limited. All rights reserved.
-                </p>
             </div>
         </div>
-    </div>
-</asp:Content>
+    </form>
+</body>
+</html>
