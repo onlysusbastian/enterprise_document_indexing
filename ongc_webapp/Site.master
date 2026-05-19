@@ -1,5 +1,24 @@
 <%@ Master Language="C#" AutoEventWireup="true" %>
 
+<script runat="server">
+    protected void lnkLogOut_Click(object sender, EventArgs e)
+    {
+        // 1. Clear out all active session data
+        Session.Abandon();
+        Session.Clear();
+        
+        // 2. Clear out the session identification cookie tracking
+        if (Request.Cookies["ASP.NET_SessionId"] != null)
+        {
+            Response.Cookies["ASP.NET_SessionId"].Value = string.Empty;
+            Response.Cookies["ASP.NET_SessionId"].Expires = DateTime.Now.AddMonths(-20);
+        }
+        
+        // 3. Force redirect the user back to the clean Login wall
+        Response.Redirect("Login.aspx", true);
+    }
+</script>
+
 <!DOCTYPE html>
 <html lang="en">
 <head runat="server">
@@ -24,7 +43,7 @@
         /* Tightened Navbar Header Layout */
         .ongc-foundation-header {
             background-color: #ffffff;
-            padding: 15px 0; /* Reduced from 25px to pull page up */
+            padding: 15px 0;
             border-bottom: 1px solid #f5f5f5;
             box-shadow: 0 4px 20px rgba(0,0,0,0.01);
         }
@@ -46,7 +65,7 @@
         }
 
         .brand-logo-frame img {
-            height: 70px; /* Marginally adjusted for sleek height fit */
+            height: 70px;
             width: auto;
             display: block;
             image-rendering: -webkit-optimize-contrast;
@@ -62,7 +81,7 @@
             padding: 0;
         }
 
-        .foundation-nav-item a {
+        .foundation-nav-item a, .logout-btn-link {
             text-decoration: none;
             color: #7a0616;
             font-size: 1.05rem;
@@ -70,9 +89,13 @@
             transition: all 0.2s ease;
             letter-spacing: 0.2px;
             padding: 8px 4px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: inline-block;
         }
 
-        .foundation-nav-item a:hover, .foundation-nav-item.active a {
+        .foundation-nav-item a:hover, .logout-btn-link:hover {
             color: #b00c24;
             font-weight: 600;
         }
@@ -98,7 +121,7 @@
         /* Minimized Viewport Margin to eliminate white gap */
         .main-portal-body {
             min-height: 75vh;
-            padding-top: 10px; /* Reduced from 20px */
+            padding-top: 10px;
         }
     </style>
 </head>
@@ -119,7 +142,9 @@
                         <li class="foundation-nav-item"><a href="Indexing.aspx">Index Assets</a></li>
                         <li class="foundation-nav-item"><a href="#">Action Plan</a></li>
                         <li class="foundation-nav-item"><a href="#">Contact Us</a></li>
-                        <li class="foundation-nav-item"><a href="Login.aspx" style="font-weight: 700; color: #b00c24;">Sign Out</a></li>
+                        <li class="foundation-nav-item">
+                            <asp:LinkButton ID="lnkLogOut" runat="server" OnClick="lnkLogOut_Click" CssClass="logout-btn-link" style="font-weight: 700; color: #b00c24;">Log Out</asp:LinkButton>
+                        </li>
                     </ul>
 
                     <button type="button" class="nav-search-icon ms-4">

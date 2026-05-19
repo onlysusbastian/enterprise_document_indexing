@@ -11,8 +11,17 @@ namespace ongc_webapp
 {
 
 
-    public partial class SiteMobileMaster
+    public partial class SiteMaster
     {
+
+        /// <summary>
+        /// lnkLogOut control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.LinkButton lnkLogOut;
 
         /// <summary>
         /// MainContent control.
