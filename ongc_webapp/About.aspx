@@ -5,7 +5,7 @@
         /* Tightened About Page Layout Engine */
         .about-page-wrapper {
             max-width: 1300px;
-            margin: 15px auto 40px auto; /* Reduced top margin from 40px to 15px */
+            margin: 15px auto 40px auto; 
             padding: 0 40px;
         }
 
@@ -38,7 +38,6 @@
             border: 1px solid #e2e8f0;
             margin-bottom: 35px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-            image-rendering: -webkit-optimize-contrast;
         }
 
         /* Core Prose Typography */

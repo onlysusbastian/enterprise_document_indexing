@@ -1,15 +1,15 @@
 ﻿<%@ Page Title="Dashboard" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Dashboard.aspx.cs" Inherits="ongc_webapp.Dashboard" %>
+
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
     <div class="container-fluid py-4" style="background-color: #f4f7f6; min-height: 90vh;">
         
         <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
             <div>
-                <h2 class="fw-bold" style="color: #8B0000;">System Dashboard</h2>
-                <p class="text-muted mb-0">Enterprise Management & Indexing Portal</p>
+                <h2 class="fw-bold" style="color: #8B0000; letter-spacing: -0.5px;">System Dashboard</h2>
+                <p class="text-muted mb-0">Centralized Information Suite</p>
             </div>
             <div class="text-end">
-                <asp:Button ID="btnLogout" runat="server" Text="Log Out" CssClass="btn btn-outline-danger btn-sm" />
-            </div>
+                </div>
         </div>
 
         <div class="row mb-4">
@@ -78,17 +78,18 @@
                 <div class="card shadow-sm border-0 bg-dark text-white p-4 h-100">
                     <h5 class="fw-bold mb-3">Quick Actions</h5>
                     <div class="d-grid gap-2">
-                        <button class="btn btn-primary py-2"><i class="fas fa-upload me-2"></i> Upload New Batch</button>
-                        <button class="btn btn-outline-light py-2"><i class="fas fa-search me-2"></i> Search Index</button>
-                        <button class="btn btn-outline-light py-2"><i class="fas fa-file-export me-2"></i> Export Logs</button>
+                        <button type="button" class="btn btn-primary py-2"><i class="fas fa-upload me-2"></i> Upload New Batch</button>
+                        <button type="button" class="btn btn-outline-light py-2"><i class="fas fa-search me-2"></i> Search Index</button>
+                        <button type="button" class="btn btn-outline-light py-2"><i class="fas fa-file-export me-2"></i> Export Logs</button>
                     </div>
                     <div class="mt-auto pt-4">
-                        <div class="p-3 bg-secondary rounded small">
+                        <div class="p-3 bg-secondary rounded small" style="background-color: #2d3748 !important;">
                             <strong>System Status:</strong> All nodes operational.
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 </asp:Content>
