@@ -2,17 +2,18 @@
 
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
     <style>
-        /* 1. HIDE NAVBAR LINKS ON LOGIN PAGE */
-        .navbar-nav {
+        /* 1. HIDE MASTER NAVBAR COMPLETELY ON LOGIN PAGE */
+        /* This prevents duplicate logos and keeps the layout perfectly clean */
+        nav.navbar, .ongc-navbar, .navbar-nav, .btn-nav-login {
             display: none !important;
         }
 
-        /* 2. Main Center Wrapper - Fits the viewport cleanly to eliminate scrolling */
+        /* 2. Main Center Wrapper - Fits the viewport cleanly without scrolling */
         .login-page-wrapper {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: calc(100vh - 120px); /* Adjusts dynamically to viewable space */
+            min-height: 92vh; /* Centered beautifully vertically */
             padding: 20px;
             box-sizing: border-box;
         }
