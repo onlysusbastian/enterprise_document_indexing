@@ -133,19 +133,35 @@
 
             <div class="col-lg-9">
                 <div class="card p-3 shadow-sm border-0 bg-white" style="border-radius:12px; overflow-x: auto;">
-                    <asp:GridView ID="gvDocuments" runat="server" AutoGenerateColumns="False" CssClass="table table-striped table-hover grid-engine mb-0" GridLines="None" EmptyDataText="No matching records register under current parameter conditions.">
+                    <asp:GridView ID="gvDocuments" runat="server"
+                        AutoGenerateColumns="False"
+                        DataKeyNames="index_id"
+                        CssClass="table table-bordered"
+                        AutoGenerateEditButton="True"
+                        OnRowEditing="gvDocuments_RowEditing"
+                        OnRowCancelingEdit="gvDocuments_RowCancelingEdit"
+                        OnRowUpdating="gvDocuments_RowUpdating">
+
                         <Columns>
-                            <asp:BoundField DataField="index_id" HeaderText="File ID" ItemStyle-Font-Names="monospace" />
-                            <asp:BoundField DataField="file_name" HeaderText="Filename" ItemStyle-CssClass="fw-bold" />
-                            <asp:BoundField DataField="region" HeaderText="Circle" />
-                            <asp:BoundField DataField="doc_type" HeaderText="Type" />
+
+                            <asp:BoundField DataField="index_id" HeaderText="Index ID" ReadOnly="True" />
+
+                            <asp:BoundField DataField="file_name" HeaderText="File Name" />
+
+                            <asp:BoundField DataField="region" HeaderText="Region" />
+
+                            <asp:BoundField DataField="doc_type" HeaderText="Doc Type" />
+
                             <asp:BoundField DataField="department" HeaderText="Department" />
-                            <asp:BoundField DataField="project_name" HeaderText="Project" />
+
                             <asp:BoundField DataField="employee_assigned" HeaderText="Employee" />
+
+                            <asp:BoundField DataField="project_name" HeaderText="Project" />
+
                             <asp:BoundField DataField="uploader_identity" HeaderText="Uploader" />
-                            <asp:BoundField DataField="upload_date" HeaderText="Date" DataFormatString="{0:dd-MMM-yyyy}" />
-                            <asp:BoundField DataField="upload_time" HeaderText="Time" />
+
                         </Columns>
+
                     </asp:GridView>
                 </div>
             </div>

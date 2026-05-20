@@ -202,5 +202,74 @@ namespace ongc_webapp
                 }
             }
         }
+    
+
+    protected void gvDocuments_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            gvDocuments.EditIndex = e.NewEditIndex;
+            BindDynamicVaultData();
+        }
+
+        protected void gvDocuments_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            gvDocuments.EditIndex = -1;
+            BindDynamicVaultData();
+        }
+
+        protected void gvDocuments_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        {
+            try
+            {
+                string indexId = gvDocuments.DataKeys[e.RowIndex].Value.ToString();
+
+                GridViewRow row = gvDocuments.Rows[e.RowIndex];
+
+                string fileName = ((TextBox)row.Cells[1].Controls[0]).Text;
+                string region = ((TextBox)row.Cells[2].Controls[0]).Text;
+                string docType = ((TextBox)row.Cells[3].Controls[0]).Text;
+                string department = ((TextBox)row.Cells[4].Controls[0]).Text;
+                string employee = ((TextBox)row.Cells[5].Controls[0]).Text;
+                string project = ((TextBox)row.Cells[6].Controls[0]).Text;
+                string uploader = ((TextBox)row.Cells[7].Controls[0]).Text;
+
+                string query = @"
+            UPDATE public.indexed_documents
+            SET
+                file_name = @FileName,
+                region = @Region,
+                doc_type = @DocType,
+                department = @Department,
+                employee_assigned = @Employee,
+                project_name = @Project,
+                uploader_identity = @Uploader
+            WHERE index_id = @IndexId";
+
+                using (NpgsqlConnection conn = new NpgsqlConnection(connString))
+                {
+                    using (NpgsqlCommand cmd = new NpgsqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@FileName", fileName);
+                        cmd.Parameters.AddWithValue("@Region", region);
+                        cmd.Parameters.AddWithValue("@DocType", docType);
+                        cmd.Parameters.AddWithValue("@Department", department);
+                        cmd.Parameters.AddWithValue("@Employee", employee);
+                        cmd.Parameters.AddWithValue("@Project", project);
+                        cmd.Parameters.AddWithValue("@Uploader", uploader);
+                        cmd.Parameters.AddWithValue("@IndexId", indexId);
+
+                        conn.Open();
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                gvDocuments.EditIndex = -1;
+                BindDynamicVaultData();
+            }
+            catch (Exception ex)
+            {
+                Response.Write("<script>alert('Update failed: " + ex.Message + "');</script>");
+            }
+        }
+
     }
 }
