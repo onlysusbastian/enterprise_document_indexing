@@ -1,5 +1,4 @@
 <%@ Master Language="C#" AutoEventWireup="true" %>
-
 <script runat="server">
     protected void lnkLogOut_Click(object sender, EventArgs e)
     {
@@ -17,11 +16,7 @@
         // 3. Force redirect the user back to the clean Login wall
         Response.Redirect("Login.aspx", true);
     }
-</script>
-
-<!DOCTYPE html>
-<html lang="en">
-<head runat="server">
+</script><!DOCTYPE html><html lang="en"><head runat="server">
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><%: Page.Title %> - ONGC Portal</title>
@@ -101,7 +96,7 @@
         }
 
         /* Premium Minimalist Search Loop Icon vector placement */
-        .nav-search-icon {
+        .nav-search-link {
             color: #7a0616;
             display: flex;
             align-items: center;
@@ -110,9 +105,10 @@
             background: none;
             border: none;
             outline: none;
+            text-decoration: none;
         }
         
-        .nav-search-icon svg {
+        .nav-search-link svg {
             width: 26px;
             height: 26px;
             stroke-width: 2;
@@ -123,9 +119,7 @@
             min-height: 75vh;
             padding-top: 10px;
         }
-    </style>
-</head>
-<body>
+    </style></head><body>
     <form runat="server">
 
         <header class="ongc-foundation-header">
@@ -147,11 +141,11 @@
                         </li>
                     </ul>
 
-                    <button type="button" class="nav-search-icon ms-4">
+                    <a href="Indexing.aspx" class="nav-search-link ms-4">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                    </button>
+                    </a>
                 </nav>
 
             </div>
@@ -164,6 +158,4 @@
             </div>
         </main>
 
-    </form>
-</body>
-</html>
+    </form></body></html>

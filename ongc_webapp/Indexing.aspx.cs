@@ -1,86 +1,120 @@
 ﻿using System;
-using System.IO;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Data;
 using System.Web.UI;
-using System.Linq;
+using System.Web.UI.WebControls;
+using Npgsql;
 
 namespace ongc_webapp
 {
     public partial class Indexing : System.Web.UI.Page
     {
+        private string connString = ConfigurationManager.ConnectionStrings["PostgresConnection"].ConnectionString;
+
         protected void Page_Load(object sender, EventArgs e)
         {
-            // Ensure only logged-in users can access the indexing engine
-            if (Session["UserID"] == null)
+            if (!IsPostBack)
             {
-                Response.Redirect("Login.aspx");
+                BindDynamicVaultData();
             }
         }
 
-        protected void btnIndexNow_Click(object sender, EventArgs e)
+        // Handles the interactive dropdown selections
+        protected void FilterTriggered(object sender, EventArgs e)
         {
-            // Check if a file was actually selected
-            if (FileUpload1.HasFile)
+            BindDynamicVaultData();
+        }
+
+        // Handles the "Apply Filters" button click
+        protected void btnSearch_Click(object sender, EventArgs e)
+        {
+            BindDynamicVaultData();
+        }
+
+        // Handles the "Reset All Filters" button click
+        protected void btnClear_Click(object sender, EventArgs e)
+        {
+            txtSearch.Text = string.Empty;
+            ddlDocType.SelectedIndex = 0;
+            ddlDepartment.SelectedIndex = 0;
+            ddlYear.SelectedIndex = 0;
+            foreach (ListItem item in cblRegions.Items)
             {
-                try
-                {
-                    // 1. Validate File Extension (Security Check)
-                    string fileName = Path.GetFileName(FileUpload1.FileName);
-                    string fileExtension = Path.GetExtension(fileName).ToLower();
-                    string[] allowedExtensions = { ".pdf", ".docx", ".xlsx", ".png", ".jpg", ".txt" };
-
-                    if (!allowedExtensions.Contains(fileExtension))
-                    {
-                        lblStatus.Text = "<div class='alert alert-danger'><strong>Invalid File:</strong> Only PDF, Word, Excel, and Images are allowed.</div>";
-                        return;
-                    }
-
-                    // 2. Validate File Size (Limit to 5MB for server optimization)
-                    int fileSize = FileUpload1.PostedFile.ContentLength;
-                    if (fileSize > 5 * 1024 * 1024)
-                    {
-                        lblStatus.Text = "<div class='alert alert-danger'><strong>File Too Large:</strong> Maximum size allowed is 5MB.</div>";
-                        return;
-                    }
-
-                    // 3. Ensure Storage Directory Exists
-                    string folderPath = Server.MapPath("~/UploadedDocuments/");
-                    if (!Directory.Exists(folderPath))
-                    {
-                        Directory.CreateDirectory(folderPath);
-                    }
-
-                    // 4. Generate a Unique Index ID
-                    string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-                    string dept = ddlDepartment.SelectedValue;
-                    string indexID = $"ONGC-{dept}-{timestamp}";
-
-                    // 5. Define the Final Save Path
-                    string fullPath = Path.Combine(folderPath, indexID + fileExtension);
-
-                    // 6. Save the physical file to the server
-                    FileUpload1.SaveAs(fullPath);
-
-                    // 7. Display Professional Success Message
-                    lblStatus.Text = $@"
-                        <div class='alert alert-success mt-3 shadow-sm'>
-                            <h5 class='mb-1'><i class='fas fa-check-circle me-2'></i>Document Successfully Indexed</h5>
-                            <hr/>
-                            <strong>Generated Index ID:</strong> {indexID}<br />
-                            <strong>File Name:</strong> {fileName}<br />
-                            <small class='text-muted'>The document has been securely moved to the enterprise vault.</small>
-                        </div>";
-
-                    // Reset fields for the next entry
-                    txtDescription.Text = "";
-                }
-                catch (Exception ex)
-                {
-                    lblStatus.Text = "<div class='alert alert-danger'><strong>System Error:</strong> " + ex.Message + "</div>";
-                }
+                item.Selected = false;
             }
-            else
+            BindDynamicVaultData();
+        }
+
+        private void BindDynamicVaultData()
+        {
+            List<string> selectedCircles = new List<string>();
+            foreach (ListItem item in cblRegions.Items)
             {
-                lblStatus.Text = "<div class='alert alert-warning'><strong>Wait!</strong> Please select a file to process before clicking Index.</div>";
+                if (item.Selected) selectedCircles.Add(item.Value);
+            }
+
+            // Comprehensive SQL engine targeting your 11 metadata schema parameters
+            string query = @"SELECT index_id, file_name, region, upload_date, upload_time, 
+                             doc_type, department, employee_assigned, project_name, uploader_identity 
+                             FROM public.indexed_documents WHERE 1=1";
+
+            // Conditional parameters injection
+            if (selectedCircles.Count > 0)
+                query += " AND region = ANY(@Circles)";
+
+            if (!string.IsNullOrEmpty(ddlDocType.SelectedValue))
+                query += " AND doc_type = @DocType";
+
+            if (!string.IsNullOrEmpty(ddlDepartment.SelectedValue))
+                query += " AND department = @Department";
+
+            if (!string.IsNullOrEmpty(ddlYear.SelectedValue))
+                query += " AND upload_year = @UploadYear";
+
+            if (!string.IsNullOrEmpty(txtSearch.Text.Trim()))
+            {
+                query += @" AND (LOWER(file_name) LIKE @Term 
+                            OR LOWER(employee_assigned) LIKE @Term 
+                            OR LOWER(project_name) LIKE @Term 
+                            OR LOWER(uploader_identity) LIKE @Term 
+                            OR @RawTerm = ANY(metadata_tags))";
+            }
+
+            query += " ORDER BY upload_date DESC, upload_time DESC";
+
+            using (NpgsqlConnection conn = new NpgsqlConnection(connString))
+            {
+                using (NpgsqlCommand cmd = new NpgsqlCommand(query, conn))
+                {
+                    // Safe mapping parameters against SQL injection vulnerabilities
+                    if (selectedCircles.Count > 0)
+                        cmd.Parameters.AddWithValue("Circles", selectedCircles.ToArray());
+
+                    if (!string.IsNullOrEmpty(ddlDocType.SelectedValue))
+                        cmd.Parameters.AddWithValue("DocType", ddlDocType.SelectedValue);
+
+                    if (!string.IsNullOrEmpty(ddlDepartment.SelectedValue))
+                        cmd.Parameters.AddWithValue("Department", ddlDepartment.SelectedValue);
+
+                    if (!string.IsNullOrEmpty(ddlYear.SelectedValue))
+                        cmd.Parameters.AddWithValue("UploadYear", Convert.ToInt32(ddlYear.SelectedValue));
+
+                    if (!string.IsNullOrEmpty(txtSearch.Text.Trim()))
+                    {
+                        string cleanTerm = txtSearch.Text.Trim().ToLower();
+                        cmd.Parameters.AddWithValue("Term", "%" + cleanTerm + "%");
+                        cmd.Parameters.AddWithValue("RawTerm", cleanTerm);
+                    }
+
+                    using (NpgsqlDataAdapter da = new NpgsqlDataAdapter(cmd))
+                    {
+                        DataTable dt = new DataTable();
+                        da.Fill(dt);
+                        gvDocuments.DataSource = dt;
+                        gvDocuments.DataBind();
+                    }
+                }
             }
         }
     }
