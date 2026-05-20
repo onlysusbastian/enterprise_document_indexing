@@ -49,8 +49,10 @@
         .footer-nav-links li { margin-bottom: 10px; }
         .footer-nav-links a { color: #cbd5e1; text-decoration: none; font-size: 0.9rem; transition: color 0.15s; }
         .footer-nav-links a:hover { color: #ffffff; }
-        .footer-social-box a { color: #fcd34d; font-size: 1.2rem; margin-right: 18px; text-decoration: none; display: inline-block; transition: opacity 0.2s; }
-        .footer-social-box a:hover { opacity: 0.8; }
+        
+        /* Updated Social Icon Vector Placement Rules */
+        .footer-social-box a { color: #fcd34d !important; font-size: 1.4rem; margin-right: 22px; text-decoration: none; display: inline-block; transition: all 0.2s ease; }
+        .footer-social-box a:hover { color: #ffffff !important; transform: scale(1.15); }
         .footer-copyright-bar { border-top: 1px solid #7a0616; padding-top: 20px; margin-top: 40px; font-size: 0.8rem; color: #94a3b8; }
     </style>
 
@@ -97,14 +99,14 @@
                     <h5 class="fw-bold mb-4 text-dark"><i class="fas fa-list-alt text-secondary me-2"></i>Recent Indexing Logs</h5>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light text-uppercase">
+                            <head class="table-light text-uppercase">
                                 <tr>
                                     <th>File ID</th>
                                     <th>Filename</th>
                                     <th>Status</th>
                                     <th>Timestamp</th>
                                 </tr>
-                            </thead>
+                            </head>
                             <tbody>
                                 <asp:Repeater ID="rptRecentLogs" runat="server">
                                     <ItemTemplate>
@@ -135,7 +137,7 @@
                         <p class="text-white-50 small mb-4">Direct execution triggers mapped across repository clusters.</p>
                     </div>
                     <div class="d-grid gap-3">
-                        <button type="button" class="btn btn-primary fw-bold py-2.5 shadow-sm">Upload New Batch</button>
+                        <a href="Indexing.aspx" class="btn btn-primary fw-bold py-2.5 shadow-sm">Upload New Batch</a>
                         <a href="Indexing.aspx" class="btn btn-outline-light fw-bold py-2.5">Search Index</a>
                         <button type="button" class="btn btn-outline-light fw-bold py-2.5">Export Logs</button>
                     </div>
@@ -203,17 +205,17 @@
                     <div class="footer-col-header">Stay Connected</div>
                     <p class="small text-white-50 mb-3">Access official external communications handles:</p>
                     <div class="footer-social-box">
-                        <a href="https://in.linkedin.com/company/oilandnaturalgascorporation" target="_blank" title="ONGC Official LinkedIn"><b>[LN]</b></a>
-                        <a href="https://x.com/ONGC_" target="_blank" title="ONGC Official X (Twitter)"><b>[X]</b></a>
-                        <a href="https://www.instagram.com/ongcofficial/" target="_blank" title="ONGC Official Instagram"><b>[IG]</b></a>
-                        <a href="https://www.youtube.com/channel/UCwNb8itlkVOKkk3yuZtBsvg" target="_blank" title="ONGC Official YouTube"><b>[YT]</b></a>
+                        <a href="https://in.linkedin.com/company/oilandnaturalgascorporation" target="_blank" title="ONGC Official LinkedIn"><i class="fab fa-linkedin"></i></a>
+                        <a href="https://x.com/ONGC_" target="_blank" title="ONGC Official X (Twitter)"><i class="fab fa-twitter"></i></a>
+                        <a href="https://www.instagram.com/ongcofficial/" target="_blank" title="ONGC Official Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.youtube.com/channel/UCwNb8itlkVOKkk3yuZtBsvg" target="_blank" title="ONGC Official YouTube"><i class="fab fa-youtube"></i></a>
                     </div>
                 </div>
             </div>
             
             <div class="footer-copyright-bar d-flex flex-column flex-md-row justify-content-between align-items-center">
                 <p class="mb-0">© 2026 Powered by ONGC Foundation & Systems Architecture Suite. All data fields shown are simulated for operational presentation context.</p>
-                <p class="mb-0 mt-2 mt-md-0 fw-bold text-light">Last Refreshed Sync: 20-May-2026 11:48 AM IST</p>
+                <p class="mb-0 mt-2 mt-md-0 fw-bold text-light">Last Refreshed Sync: 20-May-2026 02:00 PM IST</p>
             </div>
         </div>
     </footer>
