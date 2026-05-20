@@ -1,3 +1,4 @@
+
 <%@ Master Language="C#" AutoEventWireup="true" %>
 <script runat="server">
     protected void lnkLogOut_Click(object sender, EventArgs e)
@@ -16,7 +17,8 @@
         // 3. Force redirect the user back to the clean Login wall
         Response.Redirect("Login.aspx", true);
     }
-</script><!DOCTYPE html>
+</script>
+<!DOCTYPE html>
 <html lang="en">
 <head runat="server">
     <meta charset="utf-8" />
@@ -131,7 +133,7 @@
             <div class="header-flex-container">
                 
                 <a href="Dashboard.aspx" class="brand-logo-frame">
-                    <img src="ongclogo.png" alt="ONGC Logo" />
+                    <img src="images/ongclogo.png" alt="ONGC Logo" />
                 </a>
 
                 <nav class="d-flex align-items-center">

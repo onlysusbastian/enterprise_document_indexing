@@ -15,11 +15,11 @@
     <div class="container-fluid py-4">
         <div class="mb-4">
             <h3 class="fw-bold text-dark" style="border-left: 5px solid #7a0616; padding-left: 15px;">ONGC Document Repository Hub</h3>
-            <p class="text-muted ms-3">Multi-Dimensional Structural Search Engine Infrastructure</p>
+            <p class="text-muted ms-3">Secure Document Indexing & Retrieval System</p>
         </div>
 
         <div class="card p-4 border-0 shadow-sm bg-white mb-4" style="border-radius: 8px; border-top: 4px solid #7a0616 !important;">
-            <h5 class="fw-bold mb-3 text-dark"><i class="fas fa-cloud-upload-alt me-2" style="color: #7a0616;"></i>Execute Node Document Ingestion</h5>
+            <h5 class="fw-bold mb-3 text-dark"><i class="fas fa-cloud-upload-alt me-2" style="color: #7a0616;"></i>Upload New Document to Vault</h5>
             
             <div class="row g-3">
                 <div class="col-md-4">
@@ -62,10 +62,10 @@
                 </div>
                 <div class="col-md-5">
                     <span class="filter-label">Brief Content Abstract / Description</span>
-                    <asp:TextBox ID="txtDescription" runat="server" CssClass="form-control form-control-sm" placeholder="e.g., Valve structural pressure logging metadata description..."></asp:TextBox>
+                    <asp:TextBox ID="txtDescription" runat="server" CssClass="form-control form-control-sm" placeholder="Enter document summary or description..."></asp:TextBox>
                 </div>
                 <div class="col-md-3 d-grid align-items-end">
-                    <asp:Button ID="btnExecuteUpload" runat="server" Text="Commit Ingestion Transaction" CssClass="btn btn-sm text-white fw-bold py-2" style="background-color: #7a0616; border: none;" OnClick="btnExecuteUpload_Click" />
+                    <asp:Button ID="btnExecuteUpload" runat="server" Text="Upload Document" CssClass="btn btn-sm text-white fw-bold py-2 shadow-sm" style="background-color: #7a0616; border: none;" OnClick="btnExecuteUpload_Click" />
                 </div>
             </div>
 
@@ -77,8 +77,8 @@
         <div class="card control-panel-card mb-4">
             <div class="row g-3">
                 <div class="col-md-4">
-                    <span class="filter-label">Unified Keyword Search (Employee/Project/Uploader/Tags)</span>
-                    <asp:TextBox ID="txtSearch" runat="server" CssClass="form-control" placeholder="Type query filter parameter..."></asp:TextBox>
+                    <span class="filter-label">Unified Keyword Search</span>
+                    <asp:TextBox ID="txtSearch" runat="server" CssClass="form-control" placeholder="Type name, project, or keyword to filter..."></asp:TextBox>
                 </div>
                 <div class="col-md-2">
                     <span class="filter-label">Doc Type</span>
@@ -109,7 +109,7 @@
                     </asp:DropDownList>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                    <asp:Button ID="btnSearch" runat="server" Text="Apply Matrix Filters" CssClass="btn w-100 text-white fw-bold" style="background-color: #7a0616;" OnClick="btnSearch_Click" />
+                    <asp:Button ID="btnSearch" runat="server" Text="Search" CssClass="btn w-100 text-white fw-bold shadow-sm" style="background-color: #7a0616;" OnClick="btnSearch_Click" />
                 </div>
             </div>
         </div>
@@ -127,7 +127,7 @@
                         <asp:ListItem Value="Assam Asset Development Hub">Assam Development Hub</asp:ListItem>
                     </asp:CheckBoxList>
                     <hr />
-                    <asp:Button ID="btnClear" runat="server" Text="Reset All Filters" CssClass="btn btn-sm btn-outline-danger w-100 fw-bold" OnClick="btnClear_Click" />
+                    <asp:Button ID="btnClear" runat="server" Text="Reset Filters" CssClass="btn btn-sm btn-outline-danger w-100 fw-bold" OnClick="btnClear_Click" />
                 </div>
             </div>
 

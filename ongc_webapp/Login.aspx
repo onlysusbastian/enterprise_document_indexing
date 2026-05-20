@@ -44,10 +44,10 @@
             box-shadow: 0 15px 35px rgba(0,0,0,0.12);
         }
 
-        /* Left Side Image Panel */
+        /* Left Side Image Panel - PATH UPDATED FOR IMAGES FOLDER */
         .login-visual-side {
             flex: 1.1; 
-            background: url('ongc_refinery.jpg') no-repeat;
+            background: url('images/ongc_refinery.jpg') no-repeat;
             background-size: cover;
             background-position: 75% center; 
             position: relative;
@@ -123,7 +123,7 @@
         .btn-ongc-submit:hover {
             background-color: #600000;
             transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(128, 0, 0, 0.23);
+            box-shadow: 0 6px 166px rgba(128, 0, 0, 0.23);
         }
 
         .forgot-link:hover {
@@ -157,7 +157,7 @@
 
                 <div class="login-form-side">
                     <div class="text-center text-md-start">
-                        <img src="ongclogo.png" alt="ONGC Logo" class="ongc-brand-logo" />
+                        <img src="images/ongclogo.png" alt="ONGC Logo" class="ongc-brand-logo" />
                         <h2 class="portal-title">Enterprise Portal</h2>
                         <p class="text-muted mb-4" style="font-size: 0.95rem;">Management & Indexing System</p>
                     </div>

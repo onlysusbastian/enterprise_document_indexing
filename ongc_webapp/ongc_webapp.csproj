@@ -154,6 +154,9 @@
     <Content Include="Indexing.aspx" />
     <Content Include="Login.aspx" />
     <Content Include="ongclogo.png" />
+    <Content Include="ongc_refinery 1.jpg" />
+    <Content Include="ongc_refinery.jpg" />
+    <Content Include="rig.jpg" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
     <Content Include="Scripts\bootstrap.esm.js" />
