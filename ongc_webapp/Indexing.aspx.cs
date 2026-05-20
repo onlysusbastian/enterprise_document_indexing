@@ -46,6 +46,85 @@ namespace ongc_webapp
             BindDynamicVaultData();
         }
 
+        // NEW: Handles the Real-Time Node Document Ingestion Upload Form Click Event
+        protected void btnExecuteUpload_Click(object sender, EventArgs e)
+        {
+            // 1. Sanity Check: Verify a file resource actually exists
+            if (!fileVaultUpload.HasFile)
+            {
+                lblUploadMsg.ForeColor = System.Drawing.Color.Orange;
+                lblUploadMsg.Text = "Warning: Please select a valid document payload resource before submitting.";
+                return;
+            }
+
+            // 2. Validation Check: Ensure all dropdown criteria are explicitly chosen
+            if (string.IsNullOrEmpty(ddlUploadRegion.SelectedValue) ||
+                string.IsNullOrEmpty(ddlUploadDept.SelectedValue) ||
+                string.IsNullOrEmpty(ddlUploadProject.SelectedValue))
+            {
+                lblUploadMsg.ForeColor = System.Drawing.Color.Red;
+                lblUploadMsg.Text = "Validation Error: All tracking metadata fields (Asset, Department, Project) must be selected.";
+                return;
+            }
+
+            try
+            {
+                // 3. Extract metadata dimensions
+                string rawFileName = System.IO.Path.GetFileName(fileVaultUpload.FileName);
+                string fileTypeExt = System.IO.Path.GetExtension(rawFileName).Replace(".", "").ToUpper();
+
+                // Track active operator session or fallback to system agent identity safely
+                string currentSessionUser = Session["UserID"] != null ? Session["UserID"].ToString() : "Authorized Agent";
+                string docAbstract = string.IsNullOrWhiteSpace(txtDescription.Text) ? "Central repository manual submission record." : txtDescription.Text.Trim();
+
+                DateTime executionStamp = DateTime.Now;
+
+                // 4. Formulate PostgreSQL Insertion Command
+                string insertSqlCommand = @"
+                    INSERT INTO public.indexed_documents 
+                    (file_name, region, doc_type, department, upload_date, upload_time, upload_year, employee_assigned, project_name, uploader_identity, description) 
+                    VALUES 
+                    (@FileName, @Region, @DocType, @Dept, @UploadDate, @UploadTime, @UploadYear, @Employee, @Project, 'Portal_Ingest_Form', @Desc)";
+
+                using (NpgsqlConnection conn = new NpgsqlConnection(connString))
+                {
+                    using (NpgsqlCommand cmd = new NpgsqlCommand(insertSqlCommand, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@FileName", rawFileName);
+                        cmd.Parameters.AddWithValue("@Region", ddlUploadRegion.SelectedValue);
+                        cmd.Parameters.AddWithValue("@DocType", fileTypeExt);
+                        cmd.Parameters.AddWithValue("@Dept", ddlUploadDept.SelectedValue);
+                        cmd.Parameters.AddWithValue("@UploadDate", executionStamp.Date);
+                        cmd.Parameters.AddWithValue("@UploadTime", executionStamp.TimeOfDay);
+                        cmd.Parameters.AddWithValue("@UploadYear", executionStamp.Year);
+                        cmd.Parameters.AddWithValue("@Employee", currentSessionUser);
+                        cmd.Parameters.AddWithValue("@Project", ddlUploadProject.SelectedValue);
+                        cmd.Parameters.AddWithValue("@Desc", docAbstract);
+
+                        conn.Open();
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                // 5. Transaction Invalidation Success Step: Reset input controls
+                ddlUploadRegion.SelectedIndex = 0;
+                ddlUploadDept.SelectedIndex = 0;
+                ddlUploadProject.SelectedIndex = 0;
+                txtDescription.Text = "";
+
+                lblUploadMsg.ForeColor = System.Drawing.Color.Green;
+                lblUploadMsg.Text = "Success: Document successfully committed and synchronized into ONGC Vault cluster.";
+
+                // 6. Refresh the data grid view instantly to show record #111
+                BindDynamicVaultData();
+            }
+            catch (Exception ex)
+            {
+                lblUploadMsg.ForeColor = System.Drawing.Color.Red;
+                lblUploadMsg.Text = "Ingestion Pipeline Exception: " + ex.Message;
+            }
+        }
+
         private void BindDynamicVaultData()
         {
             List<string> selectedCircles = new List<string>();
@@ -54,7 +133,7 @@ namespace ongc_webapp
                 if (item.Selected) selectedCircles.Add(item.Value);
             }
 
-            // Comprehensive SQL engine targeting your 11 metadata schema parameters
+            // Comprehensive SQL engine targeting your metadata schema parameters
             string query = @"SELECT index_id, file_name, region, upload_date, upload_time, 
                              doc_type, department, employee_assigned, project_name, uploader_identity 
                              FROM public.indexed_documents WHERE 1=1";

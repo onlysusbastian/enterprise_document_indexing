@@ -18,6 +18,62 @@
             <p class="text-muted ms-3">Multi-Dimensional Structural Search Engine Infrastructure</p>
         </div>
 
+        <div class="card p-4 border-0 shadow-sm bg-white mb-4" style="border-radius: 8px; border-top: 4px solid #7a0616 !important;">
+            <h5 class="fw-bold mb-3 text-dark"><i class="fas fa-cloud-upload-alt me-2" style="color: #7a0616;"></i>Execute Node Document Ingestion</h5>
+            
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <span class="filter-label">Select File Asset Resource</span>
+                    <asp:FileUpload ID="fileVaultUpload" runat="server" CssClass="form-control form-control-sm" />
+                </div>
+                <div class="col-md-4">
+                    <span class="filter-label">Operational Asset Jurisdiction</span>
+                    <asp:DropDownList ID="ddlUploadRegion" runat="server" CssClass="form-select form-select-sm">
+                        <asp:ListItem Text="-- Select Asset Field --" Value=""></asp:ListItem>
+                        <asp:ListItem Text="Western Offshore - Mumbai Assets" Value="Western Offshore - Mumbai Assets"></asp:ListItem>
+                        <asp:ListItem Text="Eastern Frontier - ONGC Jorhat Asset" Value="Eastern Frontier - ONGC Jorhat Asset"></asp:ListItem>
+                        <asp:ListItem Text="Onshore Basin - Cambay Asset" Value="Onshore Basin - Cambay Asset"></asp:ListItem>
+                        <asp:ListItem Text="Krishna Godavari (KG) Deepwater Basin" Value="Krishna Godavari (KG) Deepwater Basin"></asp:ListItem>
+                        <asp:ListItem Text="Cauvery Asset Operational Grid" Value="Cauvery Asset Operational Grid"></asp:ListItem>
+                        <asp:ListItem Text="Assam Asset Development Hub" Value="Assam Asset Development Hub"></asp:ListItem>
+                    </asp:DropDownList>
+                </div>
+                <div class="col-md-4">
+                    <span class="filter-label">Functional Enterprise Department</span>
+                    <asp:DropDownList ID="ddlUploadDept" runat="server" CssClass="form-select form-select-sm">
+                        <asp:ListItem Text="-- Select Department --" Value=""></asp:ListItem>
+                        <asp:ListItem Text="Exploration & Drilling Services" Value="Exploration & Drilling Services"></asp:ListItem>
+                        <asp:ListItem Text="Production & Pipeline Logistics" Value="Production & Pipeline Logistics"></asp:ListItem>
+                        <asp:ListItem Text="HSE Safety & Effluent Treatment" Value="HSE Safety & Effluent Treatment"></asp:ListItem>
+                        <asp:ListItem Text="Corporate Instrumentation & IT" Value="Corporate Instrumentation & IT"></asp:ListItem>
+                    </asp:DropDownList>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-1">
+                <div class="col-md-4">
+                    <span class="filter-label">Target Project Framework</span>
+                    <asp:DropDownList ID="ddlUploadProject" runat="server" CssClass="form-select form-select-sm">
+                        <asp:ListItem Text="-- Select Active Project --" Value=""></asp:ListItem>
+                        <asp:ListItem Text="Daman Upside Development (DUDP)" Value="Daman Upside Development (DUDP)"></asp:ListItem>
+                        <asp:ListItem Text="Samudra Manthan Deepwater Initiative" Value="Samudra Manthan Deepwater Initiative"></asp:ListItem>
+                        <asp:ListItem Text="KG-DWN-98/2 Field Infrastructure" Value="KG-DWN-98/2 Field Infrastructure"></asp:ListItem>
+                    </asp:DropDownList>
+                </div>
+                <div class="col-md-5">
+                    <span class="filter-label">Brief Content Abstract / Description</span>
+                    <asp:TextBox ID="txtDescription" runat="server" CssClass="form-control form-control-sm" placeholder="e.g., Valve structural pressure logging metadata description..."></asp:TextBox>
+                </div>
+                <div class="col-md-3 d-grid align-items-end">
+                    <asp:Button ID="btnExecuteUpload" runat="server" Text="Commit Ingestion Transaction" CssClass="btn btn-sm text-white fw-bold py-2" style="background-color: #7a0616; border: none;" OnClick="btnExecuteUpload_Click" />
+                </div>
+            </div>
+
+            <div class="mt-2">
+                <asp:Label ID="lblUploadMsg" runat="server" CssClass="small fw-bold d-block"></asp:Label>
+            </div>
+        </div>
+
         <div class="card control-panel-card mb-4">
             <div class="row g-3">
                 <div class="col-md-4">
@@ -34,13 +90,13 @@
                     </asp:DropDownList>
                 </div>
                 <div class="col-md-2">
-                    <span class="filter-label">Department</span>
+                    <span class="filter-label">Department Filter</span>
                     <asp:DropDownList ID="ddlDepartment" runat="server" CssClass="form-select" AutoPostBack="true" OnSelectedIndexChanged="FilterTriggered">
                         <asp:ListItem Text="-- All Depts --" Value=""></asp:ListItem>
-                        <asp:ListItem Text="Exploration" Value="Exploration"></asp:ListItem>
-                        <asp:ListItem Text="Logistics" Value="Logistics"></asp:ListItem>
-                        <asp:ListItem Text="HR" Value="HR"></asp:ListItem>
-                        <asp:ListItem Text="Safety" Value="Safety"></asp:ListItem>
+                        <asp:ListItem Text="Exploration & Drilling Services" Value="Exploration & Drilling Services"></asp:ListItem>
+                        <asp:ListItem Text="Production & Pipeline Logistics" Value="Production & Pipeline Logistics"></asp:ListItem>
+                        <asp:ListItem Text="HSE Safety & Effluent Treatment" Value="HSE Safety & Effluent Treatment"></asp:ListItem>
+                        <asp:ListItem Text="Corporate Instrumentation & IT" Value="Corporate Instrumentation & IT"></asp:ListItem>
                     </asp:DropDownList>
                 </div>
                 <div class="col-md-2">
@@ -63,11 +119,12 @@
                 <div class="filter-sidebar">
                     <h6 class="fw-bold mb-3 text-uppercase text-secondary" style="letter-spacing:1px;"><i class="fas fa-map-marker-alt me-2"></i>Operational Circles</h6>
                     <asp:CheckBoxList ID="cblRegions" runat="server" AutoPostBack="true" OnSelectedIndexChanged="FilterTriggered" CssClass="circle-list w-100">
-                        <asp:ListItem Value="Northern Region">Northern Region</asp:ListItem>
-                        <asp:ListItem Value="Eastern Region">Eastern Region</asp:ListItem>
-                        <asp:ListItem Value="Central Region">Central Region</asp:ListItem>
-                        <asp:ListItem Value="Southern Region">Southern Region</asp:ListItem>
-                        <asp:ListItem Value="Assam Asset">North Eastern</asp:ListItem>
+                        <asp:ListItem Value="Western Offshore - Mumbai Assets">Western Offshore - Mumbai</asp:ListItem>
+                        <asp:ListItem Value="Eastern Frontier - ONGC Jorhat Asset">Eastern Frontier - Jorhat</asp:ListItem>
+                        <asp:ListItem Value="Onshore Basin - Cambay Asset">Onshore Basin - Cambay</asp:ListItem>
+                        <asp:ListItem Value="Krishna Godavari (KG) Deepwater Basin">KG Deepwater Basin</asp:ListItem>
+                        <asp:ListItem Value="Cauvery Asset Operational Grid">Cauvery Asset Grid</asp:ListItem>
+                        <asp:ListItem Value="Assam Asset Development Hub">Assam Development Hub</asp:ListItem>
                     </asp:CheckBoxList>
                     <hr />
                     <asp:Button ID="btnClear" runat="server" Text="Reset All Filters" CssClass="btn btn-sm btn-outline-danger w-100 fw-bold" OnClick="btnClear_Click" />
