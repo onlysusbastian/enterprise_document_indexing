@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+using System.Configuration;
 using System.Web.UI;
-using System.Web.UI.WebControls;
+using Npgsql;
 
 namespace ongc_webapp
 {
@@ -11,7 +9,7 @@ namespace ongc_webapp
     {
         protected void Page_Load(object sender, EventArgs e)
         {
-            // Optional: If a user is already logged in, redirect them to the Dashboard automatically
+            // If already logged in, redirect to dashboard
             if (!IsPostBack)
             {
                 if (Session["UserID"] != null)
@@ -23,28 +21,82 @@ namespace ongc_webapp
 
         protected void btnLogin_Click(object sender, EventArgs e)
         {
-            // 1. Capture the data from the textboxes and remove extra spaces
+            // Get textbox values
             string username = txtUsername.Text.Trim();
             string password = txtPassword.Text.Trim();
 
-            // 2. Validation Logic
-            // In a real-world scenario, you would query your SQL Database here.
-            // For your internship project demo, we use these hardcoded credentials:
-            if (username == "admin" && password == "ongc123")
-            {
-                // 3. Establish a Session
-                // This marks the user as 'Authorized' so they can access protected pages
-                Session["UserID"] = username;
-                Session["LoginTime"] = DateTime.Now.ToString();
+            // PostgreSQL connection string from Web.config
+            string connString =
+                ConfigurationManager
+                .ConnectionStrings["PostgresConnection"]
+                .ConnectionString;
 
-                // 4. Redirect to Dashboard
-                Response.Redirect("Dashboard.aspx");
-            }
-            else
+            try
             {
-                // 5. Failed login - Show a professional alert message
-                string script = "alert('Access Denied: Invalid Credentials. Please check your Employee ID and Password.');";
-                ClientScript.RegisterStartupScript(this.GetType(), "LoginError", script, true);
+                using (NpgsqlConnection conn =
+                    new NpgsqlConnection(connString))
+                {
+                    conn.Open();
+
+                    // Query users table
+                    string query = @"
+                        SELECT username, role
+                        FROM public.users
+                        WHERE username = @username
+                        AND password_hash = @password";
+
+                    using (NpgsqlCommand cmd =
+                        new NpgsqlCommand(query, conn))
+                    {
+                        // Safe parameter mapping
+                        cmd.Parameters.AddWithValue("@username", username);
+
+                        cmd.Parameters.AddWithValue("@password", password);
+
+                        using (NpgsqlDataReader reader =
+                            cmd.ExecuteReader())
+                        {
+                            // LOGIN SUCCESS
+                            if (reader.Read())
+                            {
+                                // Store session values
+                                Session["UserID"] =
+                                    reader["username"].ToString();
+
+                                Session["Role"] =
+                                    reader["role"].ToString();
+
+                                Session["LoginTime"] =
+                                    DateTime.Now.ToString();
+
+                                // Redirect to dashboard
+                                Response.Redirect("Dashboard.aspx");
+                            }
+                            else
+                            {
+                                // LOGIN FAILED
+                                string script =
+                                    "alert('Access Denied: Invalid Username or Password.');";
+
+                                ClientScript.RegisterStartupScript(
+                                    this.GetType(),
+                                    "LoginError",
+                                    script,
+                                    true
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // DATABASE ERROR
+                Response.Write(
+                    "<script>alert('Database Error: " +
+                    ex.Message.Replace("'", "") +
+                    "');</script>"
+                );
             }
         }
     }
