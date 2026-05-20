@@ -46,7 +46,7 @@ namespace ongc_webapp
             BindDynamicVaultData();
         }
 
-        // NEW: Handles the Real-Time Node Document Ingestion Upload Form Click Event
+        // UPDATED: Handles the Real-Time Node Document Ingestion Upload Form Click Event
         protected void btnExecuteUpload_Click(object sender, EventArgs e)
         {
             // 1. Sanity Check: Verify a file resource actually exists
@@ -79,17 +79,23 @@ namespace ongc_webapp
 
                 DateTime executionStamp = DateTime.Now;
 
-                // 4. Formulate PostgreSQL Insertion Command
+                // --- GENERATE TRANSACTING TOKEN VALUE TO RESOLVE 23502 NOT-NULL CONSTRAINT ---
+                Random rng = new Random();
+                int randomIdSuffix = rng.Next(20000, 99999);
+                string dynamicIndexId = "#TRX-" + randomIdSuffix;
+
+                // 4. Formulate PostgreSQL Insertion Command including index_id injection mapping
                 string insertSqlCommand = @"
                     INSERT INTO public.indexed_documents 
-                    (file_name, region, doc_type, department, upload_date, upload_time, upload_year, employee_assigned, project_name, uploader_identity, description) 
+                    (index_id, file_name, region, doc_type, department, upload_date, upload_time, upload_year, employee_assigned, project_name, uploader_identity, description) 
                     VALUES 
-                    (@FileName, @Region, @DocType, @Dept, @UploadDate, @UploadTime, @UploadYear, @Employee, @Project, 'Portal_Ingest_Form', @Desc)";
+                    (@IndexId, @FileName, @Region, @DocType, @Dept, @UploadDate, @UploadTime, @UploadYear, @Employee, @Project, 'Portal_Ingest_Form', @Desc)";
 
                 using (NpgsqlConnection conn = new NpgsqlConnection(connString))
                 {
                     using (NpgsqlCommand cmd = new NpgsqlCommand(insertSqlCommand, conn))
                     {
+                        cmd.Parameters.AddWithValue("@IndexId", dynamicIndexId);
                         cmd.Parameters.AddWithValue("@FileName", rawFileName);
                         cmd.Parameters.AddWithValue("@Region", ddlUploadRegion.SelectedValue);
                         cmd.Parameters.AddWithValue("@DocType", fileTypeExt);
@@ -113,9 +119,9 @@ namespace ongc_webapp
                 txtDescription.Text = "";
 
                 lblUploadMsg.ForeColor = System.Drawing.Color.Green;
-                lblUploadMsg.Text = "Success: Document successfully committed and synchronized into ONGC Vault cluster.";
+                lblUploadMsg.Text = "Success: Document " + dynamicIndexId + " successfully committed and synchronized into ONGC Vault cluster.";
 
-                // 6. Refresh the data grid view instantly to show record #111
+                // 6. Refresh the data grid view instantly to show your fresh entry right at the top
                 BindDynamicVaultData();
             }
             catch (Exception ex)
