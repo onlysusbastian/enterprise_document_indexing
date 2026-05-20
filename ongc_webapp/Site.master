@@ -133,7 +133,7 @@
                     <ul class="foundation-nav-list">
                         <li class="foundation-nav-item"><a href="Dashboard.aspx">Home</a></li>
                         <li class="foundation-nav-item"><a href="About.aspx">About Us</a></li>
-                        <li class="foundation-nav-item"><a href="Indexing.aspx">Index Assets</a></li>
+                        <li class="foundation-nav-item"><a href="Indexing.aspx">Document Search</a></li>
                         <li class="foundation-nav-item"><a href="#">Action Plan</a></li>
                         <li class="foundation-nav-item"><a href="#">Contact Us</a></li>
                         <li class="foundation-nav-item">
