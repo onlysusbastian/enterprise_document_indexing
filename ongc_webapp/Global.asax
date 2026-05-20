@@ -3,16 +3,30 @@
 <script runat="server">
     void Application_BeginRequest(object sender, EventArgs e)
     {
+        // Capture the incoming URL path requested by the browser
         string currentPath = Request.AppRelativeCurrentExecutionFilePath.ToLower();
 
-        // Catch root requests, extensionless default, or extensionless login hits
-        if (currentPath == "~/" || 
-            currentPath == "~/default.aspx" || 
-            currentPath == "~/default" || 
-            currentPath == "~/login")
+        // Server-Side Guardrail: Force routing to clean .aspx files
+        if (currentPath == "~/" || currentPath == "~/default.aspx" || currentPath == "~/default")
         {
-            // Direct the server to the exact physical file asset
             Response.Redirect("~/Login.aspx", true);
+        }
+        else if (currentPath == "~/login")
+        {
+            Response.Redirect("~/Login.aspx", true);
+        }
+        else if (currentPath == "~/dashboard")
+        {
+            Response.Redirect("~/Dashboard.aspx", true);
+        }
+        else if (currentPath == "~/about")
+        {
+            Response.Redirect("~/About.aspx", true);
+        }
+        // Catch extensionless Indexing hits and map securely to the physical file asset
+        else if (currentPath == "~/indexing")
+        {
+            Response.Redirect("~/Indexing.aspx", true);
         }
     }
 </script>
