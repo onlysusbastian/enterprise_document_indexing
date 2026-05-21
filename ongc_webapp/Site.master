@@ -1,4 +1,3 @@
-
 <%@ Master Language="C#" AutoEventWireup="true" %>
 <script runat="server">
     protected void lnkLogOut_Click(object sender, EventArgs e)
@@ -16,11 +15,7 @@
         
         // 3. Force redirect the user back to the clean Login wall
         Response.Redirect("Login.aspx", true);
-    }
-</script>
-<!DOCTYPE html>
-<html lang="en">
-<head runat="server">
+    }</script><!DOCTYPE html><html lang="en"><head runat="server">
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><%: Page.Title %> - ONGC Portal</title>
@@ -124,9 +119,7 @@
             min-height: 75vh;
             padding-top: 10px;
         }
-    </style>
-</head>
-<body>
+    </style></head><body>
     <form runat="server">
 
         <header class="ongc-foundation-header">
@@ -141,8 +134,8 @@
                         <li class="foundation-nav-item"><a href="Dashboard.aspx">Home</a></li>
                         <li class="foundation-nav-item"><a href="About.aspx">About Us</a></li>
                         <li class="foundation-nav-item"><a href="Indexing.aspx">Document Search</a></li>
-                        <li class="foundation-nav-item"><a href="#">Action Plan</a></li>
-                        <li class="foundation-nav-item"><a href="#">Contact Us</a></li>
+                        <li class="foundation-nav-item"><a href="Upload.aspx">Document Upload</a></li>
+                        <li class="foundation-nav-item"><a href="About.aspx">Contact Us</a></li>
                         <li class="foundation-nav-item">
                             <asp:LinkButton ID="lnkLogOut" runat="server" OnClick="lnkLogOut_Click" CssClass="logout-btn-link" style="font-weight: 700; color: #b00c24;">Log Out</asp:LinkButton>
                         </li>
@@ -165,6 +158,4 @@
             </div>
         </main>
 
-    </form>
-</body>
-</html>
+    </form></body></html>
