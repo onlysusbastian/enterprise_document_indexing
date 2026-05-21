@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Web.UI;
@@ -10,7 +9,8 @@ namespace ongc_webapp
 {
     public partial class Indexing : System.Web.UI.Page
     {
-        private string connString = ConfigurationManager.ConnectionStrings["PostgresConnection"].ConnectionString;
+        private string connString =
+            ConfigurationManager.ConnectionStrings["PostgresConnection"].ConnectionString;
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -20,191 +20,44 @@ namespace ongc_webapp
             }
         }
 
-        // Handles the interactive dropdown selections
-        protected void FilterTriggered(object sender, EventArgs e)
-        {
-            BindDynamicVaultData();
-        }
-
-        // Handles the "Apply Filters" button click
         protected void btnSearch_Click(object sender, EventArgs e)
         {
             BindDynamicVaultData();
         }
 
-        // Handles the "Reset All Filters" button click
-        protected void btnClear_Click(object sender, EventArgs e)
-        {
-            txtSearch.Text = string.Empty;
-            ddlDocType.SelectedIndex = 0;
-            ddlDepartment.SelectedIndex = 0;
-            ddlYear.SelectedIndex = 0;
-            foreach (ListItem item in cblRegions.Items)
-            {
-                item.Selected = false;
-            }
-            BindDynamicVaultData();
-        }
-
-        // UPDATED: Handles the Real-Time Node Document Ingestion Upload Form Click Event
-        protected void btnExecuteUpload_Click(object sender, EventArgs e)
-        {
-            // 1. Sanity Check: Verify a file resource actually exists
-            if (!fileVaultUpload.HasFile)
-            {
-                lblUploadMsg.ForeColor = System.Drawing.Color.Orange;
-                lblUploadMsg.Text = "Warning: Please select a valid document payload resource before submitting.";
-                return;
-            }
-
-            // 2. Validation Check: Ensure all dropdown criteria are explicitly chosen
-            if (string.IsNullOrEmpty(ddlUploadRegion.SelectedValue) ||
-                string.IsNullOrEmpty(ddlUploadDept.SelectedValue) ||
-                string.IsNullOrEmpty(ddlUploadProject.SelectedValue))
-            {
-                lblUploadMsg.ForeColor = System.Drawing.Color.Red;
-                lblUploadMsg.Text = "Validation Error: All tracking metadata fields (Asset, Department, Project) must be selected.";
-                return;
-            }
-
-            try
-            {
-                // 3. Extract metadata dimensions
-                string rawFileName = System.IO.Path.GetFileName(fileVaultUpload.FileName);
-                string fileTypeExt = System.IO.Path.GetExtension(rawFileName).Replace(".", "").ToUpper();
-
-                // Track active operator session or fallback to system agent identity safely
-                string currentSessionUser = Session["UserID"] != null ? Session["UserID"].ToString() : "Authorized Agent";
-                string docAbstract = string.IsNullOrWhiteSpace(txtDescription.Text) ? "Central repository manual submission record." : txtDescription.Text.Trim();
-
-                DateTime executionStamp = DateTime.Now;
-
-                // --- GENERATE TRANSACTING TOKEN VALUE TO RESOLVE 23502 NOT-NULL CONSTRAINT ---
-                Random rng = new Random();
-                int randomIdSuffix = rng.Next(20000, 99999);
-                string dynamicIndexId = "#TRX-" + randomIdSuffix;
-
-                // 4. Formulate PostgreSQL Insertion Command including index_id injection mapping
-                string insertSqlCommand = @"
-                    INSERT INTO public.indexed_documents 
-                    (index_id, file_name, region, doc_type, department, upload_date, upload_time, upload_year, employee_assigned, project_name, uploader_identity, description) 
-                    VALUES 
-                    (@IndexId, @FileName, @Region, @DocType, @Dept, @UploadDate, @UploadTime, @UploadYear, @Employee, @Project, 'Portal_Ingest_Form', @Desc)";
-
-                using (NpgsqlConnection conn = new NpgsqlConnection(connString))
-                {
-                    using (NpgsqlCommand cmd = new NpgsqlCommand(insertSqlCommand, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@IndexId", dynamicIndexId);
-                        cmd.Parameters.AddWithValue("@FileName", rawFileName);
-                        cmd.Parameters.AddWithValue("@Region", ddlUploadRegion.SelectedValue);
-                        cmd.Parameters.AddWithValue("@DocType", fileTypeExt);
-                        cmd.Parameters.AddWithValue("@Dept", ddlUploadDept.SelectedValue);
-                        cmd.Parameters.AddWithValue("@UploadDate", executionStamp.Date);
-                        cmd.Parameters.AddWithValue("@UploadTime", executionStamp.TimeOfDay);
-                        cmd.Parameters.AddWithValue("@UploadYear", executionStamp.Year);
-                        cmd.Parameters.AddWithValue("@Employee", currentSessionUser);
-                        cmd.Parameters.AddWithValue("@Project", ddlUploadProject.SelectedValue);
-                        cmd.Parameters.AddWithValue("@Desc", docAbstract);
-
-                        conn.Open();
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-
-                // 5. Transaction Invalidation Success Step: Reset input controls
-                ddlUploadRegion.SelectedIndex = 0;
-                ddlUploadDept.SelectedIndex = 0;
-                ddlUploadProject.SelectedIndex = 0;
-                txtDescription.Text = "";
-
-                lblUploadMsg.ForeColor = System.Drawing.Color.Green;
-                lblUploadMsg.Text = "Success: Document " + dynamicIndexId + " successfully committed and synchronized into ONGC Vault cluster.";
-
-                // 6. Refresh the data grid view instantly to show your fresh entry right at the top
-                BindDynamicVaultData();
-            }
-            catch (Exception ex)
-            {
-                lblUploadMsg.ForeColor = System.Drawing.Color.Red;
-                lblUploadMsg.Text = "Ingestion Pipeline Exception: " + ex.Message;
-            }
-        }
-
         private void BindDynamicVaultData()
         {
-            List<string> selectedCircles = new List<string>();
-            foreach (ListItem item in cblRegions.Items)
-            {
-                if (item.Selected) selectedCircles.Add(item.Value);
-            }
-
-            // Comprehensive SQL engine targeting your metadata schema parameters
-            string query = @"SELECT index_id, file_name, region, upload_date, upload_time, 
-                             doc_type, department, employee_assigned, project_name, uploader_identity 
-                             FROM public.indexed_documents WHERE 1=1";
-
-            // Conditional parameters injection
-            if (selectedCircles.Count > 0)
-                query += " AND region = ANY(@Circles)";
-
-            if (!string.IsNullOrEmpty(ddlDocType.SelectedValue))
-                query += " AND doc_type = @DocType";
-
-            if (!string.IsNullOrEmpty(ddlDepartment.SelectedValue))
-                query += " AND department = @Department";
-
-            if (!string.IsNullOrEmpty(ddlYear.SelectedValue))
-                query += " AND upload_year = @UploadYear";
-
-            if (!string.IsNullOrEmpty(txtSearch.Text.Trim()))
-            {
-                query += @" AND (LOWER(file_name) LIKE @Term 
-                            OR LOWER(employee_assigned) LIKE @Term 
-                            OR LOWER(project_name) LIKE @Term 
-                            OR LOWER(uploader_identity) LIKE @Term 
-                            OR @RawTerm = ANY(metadata_tags))";
-            }
-
-            query += " ORDER BY upload_date DESC, upload_time DESC";
+            string query = @"
+                SELECT
+                    index_id,
+                    file_name,
+                    region,
+                    doc_type,
+                    department,
+                    employee_assigned,
+                    project_name,
+                    uploader_identity
+                FROM public.indexed_documents
+                ORDER BY index_id DESC";
 
             using (NpgsqlConnection conn = new NpgsqlConnection(connString))
             {
                 using (NpgsqlCommand cmd = new NpgsqlCommand(query, conn))
                 {
-                    // Safe mapping parameters against SQL injection vulnerabilities
-                    if (selectedCircles.Count > 0)
-                        cmd.Parameters.AddWithValue("Circles", selectedCircles.ToArray());
-
-                    if (!string.IsNullOrEmpty(ddlDocType.SelectedValue))
-                        cmd.Parameters.AddWithValue("DocType", ddlDocType.SelectedValue);
-
-                    if (!string.IsNullOrEmpty(ddlDepartment.SelectedValue))
-                        cmd.Parameters.AddWithValue("Department", ddlDepartment.SelectedValue);
-
-                    if (!string.IsNullOrEmpty(ddlYear.SelectedValue))
-                        cmd.Parameters.AddWithValue("UploadYear", Convert.ToInt32(ddlYear.SelectedValue));
-
-                    if (!string.IsNullOrEmpty(txtSearch.Text.Trim()))
-                    {
-                        string cleanTerm = txtSearch.Text.Trim().ToLower();
-                        cmd.Parameters.AddWithValue("Term", "%" + cleanTerm + "%");
-                        cmd.Parameters.AddWithValue("RawTerm", cleanTerm);
-                    }
-
                     using (NpgsqlDataAdapter da = new NpgsqlDataAdapter(cmd))
                     {
                         DataTable dt = new DataTable();
+
                         da.Fill(dt);
+
                         gvDocuments.DataSource = dt;
                         gvDocuments.DataBind();
                     }
                 }
             }
         }
-    
 
-    protected void gvDocuments_RowEditing(object sender, GridViewEditEventArgs e)
+        protected void gvDocuments_RowEditing(object sender, GridViewEditEventArgs e)
         {
             gvDocuments.EditIndex = e.NewEditIndex;
             BindDynamicVaultData();
@@ -220,56 +73,103 @@ namespace ongc_webapp
         {
             try
             {
-                string indexId = gvDocuments.DataKeys[e.RowIndex].Value.ToString();
+                string indexId =
+                    gvDocuments.DataKeys[e.RowIndex].Value.ToString();
 
                 GridViewRow row = gvDocuments.Rows[e.RowIndex];
 
-                string fileName = ((TextBox)row.Cells[1].Controls[0]).Text;
-                string region = ((TextBox)row.Cells[2].Controls[0]).Text;
-                string docType = ((TextBox)row.Cells[3].Controls[0]).Text;
-                string department = ((TextBox)row.Cells[4].Controls[0]).Text;
-                string employee = ((TextBox)row.Cells[5].Controls[0]).Text;
-                string project = ((TextBox)row.Cells[6].Controls[0]).Text;
-                string uploader = ((TextBox)row.Cells[7].Controls[0]).Text;
+                string fileName =
+                    ((TextBox)row.FindControl("txtFileName")).Text;
+
+                string region =
+                    ((TextBox)row.FindControl("txtRegion")).Text;
+
+                string docType =
+                    ((TextBox)row.FindControl("txtDocType")).Text;
+
+                string department =
+                    ((TextBox)row.FindControl("txtDepartment")).Text;
+
+                string employee =
+                    ((TextBox)row.FindControl("txtEmployee")).Text;
+
+                string project =
+                    ((TextBox)row.FindControl("txtProject")).Text;
+
+                string uploader =
+                    ((TextBox)row.FindControl("txtUploader")).Text;
 
                 string query = @"
-            UPDATE public.indexed_documents
-            SET
-                file_name = @FileName,
-                region = @Region,
-                doc_type = @DocType,
-                department = @Department,
-                employee_assigned = @Employee,
-                project_name = @Project,
-                uploader_identity = @Uploader
-            WHERE index_id = @IndexId";
+                    UPDATE public.indexed_documents
+                    SET
+                        file_name = @file_name,
+                        region = @region,
+                        doc_type = @doc_type,
+                        department = @department,
+                        employee_assigned = @employee,
+                        project_name = @project,
+                        uploader_identity = @uploader
+                    WHERE index_id = @index_id";
 
-                using (NpgsqlConnection conn = new NpgsqlConnection(connString))
+                using (NpgsqlConnection conn =
+                    new NpgsqlConnection(connString))
                 {
-                    using (NpgsqlCommand cmd = new NpgsqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@FileName", fileName);
-                        cmd.Parameters.AddWithValue("@Region", region);
-                        cmd.Parameters.AddWithValue("@DocType", docType);
-                        cmd.Parameters.AddWithValue("@Department", department);
-                        cmd.Parameters.AddWithValue("@Employee", employee);
-                        cmd.Parameters.AddWithValue("@Project", project);
-                        cmd.Parameters.AddWithValue("@Uploader", uploader);
-                        cmd.Parameters.AddWithValue("@IndexId", indexId);
+                    conn.Open();
 
-                        conn.Open();
+                    using (NpgsqlCommand cmd =
+                        new NpgsqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@file_name", fileName);
+                        cmd.Parameters.AddWithValue("@region", region);
+                        cmd.Parameters.AddWithValue("@doc_type", docType);
+                        cmd.Parameters.AddWithValue("@department", department);
+                        cmd.Parameters.AddWithValue("@employee", employee);
+                        cmd.Parameters.AddWithValue("@project", project);
+                        cmd.Parameters.AddWithValue("@uploader", uploader);
+                        cmd.Parameters.AddWithValue("@index_id", indexId);
+
                         cmd.ExecuteNonQuery();
                     }
                 }
 
                 gvDocuments.EditIndex = -1;
+
                 BindDynamicVaultData();
+
+                lblStatus.Style["display"] = "block";
+                lblStatus.Style["opacity"] = "1";
+                lblStatus.Text = "Updated successfully.";
+
+                ClientScript.RegisterStartupScript(
+                    this.GetType(),
+                    "fadeLabel",
+                    @"
+                    setTimeout(function () {
+                        var lbl =
+                        document.getElementById('" + lblStatus.ClientID + @"');
+
+                        if (lbl) {
+
+                            lbl.style.transition = 'opacity 1s';
+                            lbl.style.opacity = '0';
+
+                            setTimeout(function () {
+                                lbl.style.display = 'none';
+                            }, 1000);
+                        }
+                    }, 2000);
+                    ",
+                    true
+                );
             }
             catch (Exception ex)
             {
-                Response.Write("<script>alert('Update failed: " + ex.Message + "');</script>");
+                Response.Write(
+                    "<script>alert('ERROR: " +
+                    ex.Message.Replace("'", "") +
+                    "');</script>"
+                );
             }
         }
-
     }
 }
