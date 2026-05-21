@@ -72,7 +72,7 @@ namespace ongc_webapp
                 }
 
                 // Clean Success Status Display Reset
-                lblStatusFeedback.Text = "🚀 Data saved successfully. Structural rows processed into repository schema.";
+                lblStatusFeedback.Text = "🚀 Data saved successfully.";
                 lblStatusFeedback.ForeColor = System.Drawing.Color.MediumSeaGreen;
 
                 // Clear controls data state for subsequent entries
