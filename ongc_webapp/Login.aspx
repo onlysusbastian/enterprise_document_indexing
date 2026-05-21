@@ -22,7 +22,6 @@
             padding: 0;
         }
 
-        /* Centering Wrapper to fit perfectly on the screen */
         .login-page-wrapper {
             display: flex;
             justify-content: center;
@@ -32,7 +31,6 @@
             box-sizing: border-box;
         }
 
-        /* Premium Login Card Structure */
         .login-container-wrapper {
             display: flex;
             width: 100%;
@@ -44,7 +42,6 @@
             box-shadow: 0 15px 35px rgba(0,0,0,0.12);
         }
 
-        /* Left Side Image Panel - PATH UPDATED FOR IMAGES FOLDER */
         .login-visual-side {
             flex: 1.1; 
             background: url('images/ongc_refinery.jpg') no-repeat;
@@ -63,7 +60,6 @@
             pointer-events: none;
         }
 
-        /* Right Side Input System */
         .login-form-side {
             flex: 0.9; 
             padding: 40px 45px;
@@ -88,7 +84,6 @@
             font-size: 1.75rem;
         }
 
-        /* Form Custom Field Styling */
         .form-control-custom {
             border: 1.5px solid #E2E8F0;
             padding: 12px 14px;
@@ -124,11 +119,6 @@
             background-color: #600000;
             transform: translateY(-1px);
             box-shadow: 0 6px 166px rgba(128, 0, 0, 0.23);
-        }
-
-        .forgot-link:hover {
-            color: #800000 !important;
-            text-decoration: underline !important;
         }
 
         .auth-toggle-link {
@@ -179,14 +169,18 @@
                             <h2 class="portal-title">Create Account</h2>
                             <p class="text-muted mb-4" style="font-size: 0.95rem;">Register corporate access profile</p>
                         </div>
+                        <div id="recoveryHeader" style="display: none;">
+                            <h2 class="portal-title">Recover Password</h2>
+                            <p class="text-muted mb-4" style="font-size: 0.95rem;">Verify system credential registry link</p>
+                        </div>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-3" id="usernameGroup">
                         <label class="form-label fw-bold text-secondary small" style="letter-spacing: 0.3px;">USER ID / CPF NUMBER</label>
                         <asp:TextBox ID="txtUsername" runat="server" CssClass="form-control form-control-custom" placeholder="Enter your ID"></asp:TextBox>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-3" id="passwordGroup">
                         <label class="form-label fw-bold text-secondary small" style="letter-spacing: 0.3px;">PASSWORD</label>
                         <asp:TextBox ID="txtPassword" runat="server" CssClass="form-control form-control-custom" TextMode="Password" placeholder="••••••••"></asp:TextBox>
                     </div>
@@ -194,6 +188,11 @@
                     <div class="mb-4" id="confirmPasswordGroup" style="display: none;">
                         <label class="form-label fw-bold text-secondary small" style="letter-spacing: 0.3px;">CONFIRM PASSWORD</label>
                         <asp:TextBox ID="txtConfirmPassword" runat="server" CssClass="form-control form-control-custom" TextMode="Password" placeholder="••••••••"></asp:TextBox>
+                    </div>
+
+                    <div class="mb-4" id="corporateEmailGroup" style="display: none;">
+                        <label class="form-label fw-bold text-secondary small" style="letter-spacing: 0.3px;">REGISTERED CORPORATE EMAIL</label>
+                        <asp:TextBox ID="txtCorporateEmail" runat="server" CssClass="form-control form-control-custom" placeholder="alias@ongc.co.in"></asp:TextBox>
                     </div>
 
                     <asp:HiddenField ID="hdnAuthState" runat="server" Value="LOGIN" />
@@ -209,13 +208,17 @@
 
                     <div class="text-center text-md-start mt-3 small">
                         <div id="loginFooterLinks">
-                            <a href="#" class="forgot-link text-decoration-none text-muted me-3">Forgot Password?</a>
+                            <a class="auth-toggle-link text-muted me-3" style="font-weight:400;" onclick="switchAuthenticationView('RECOVERY')">Forgot Password?</a>
                             <span class="text-muted">New user? </span>
-                            <a class="auth-toggle-link" onclick="toggleAuthView(true)">Register Here</a>
+                            <a class="auth-toggle-link" onclick="switchAuthenticationView('REGISTER')">Register Here</a>
                         </div>
                         <div id="registerFooterLinks" style="display: none;">
                             <span class="text-muted">Already registered? </span>
-                            <a class="auth-toggle-link" onclick="toggleAuthView(false)">Log In Instead</a>
+                            <a class="auth-toggle-link" onclick="switchAuthenticationView('LOGIN')">Log In Instead</a>
+                        </div>
+                        <div id="recoveryFooterLinks" style="display: none;">
+                            <span class="text-muted">Remember access sequence? </span>
+                            <a class="auth-toggle-link" onclick="switchAuthenticationView('LOGIN')">Back to Login</a>
                         </div>
                     </div>
 
@@ -229,45 +232,72 @@
     </form>
 
     <script type="text/javascript">
-// @ts-nocheck
-function toggleAuthView(isRegister) {
-    var loginHead = document.getElementById('loginHeader');
-    var regHead = document.getElementById('registerHeader');
-    var confirmGroup = document.getElementById('confirmPasswordGroup');
-    var loginFooter = document.getElementById('loginFooterLinks');
-    var regFooter = document.getElementById('registerFooterLinks');
-    var submitBtn = document.getElementById('<%= btnLogin.ClientID %>');
-            var stateField = document.getElementById('<%= hdnAuthState.ClientID %>');
+        // @ts-nocheck
+        function switchAuthenticationView(selectedMode) {
+            var mode = String(selectedMode);
+            
+            // DOM References
+            var loginHead = document.getElementById('loginHeader');
+            var regHead = document.getElementById('registerHeader');
+            var recHead = document.getElementById('recoveryHeader');
+            
+            var userGroup = document.getElementById('usernameGroup');
+            var passGroup = document.getElementById('passwordGroup');
+            var confirmGroup = document.getElementById('confirmPasswordGroup');
+            var emailGroup = document.getElementById('corporateEmailGroup');
+            
+            var loginFoot = document.getElementById('loginFooterLinks');
+            var regFoot = document.getElementById('registerFooterLinks');
+            var recFoot = document.getElementById('recoveryFooterLinks');
+            
+            var actionButton = document.getElementById('<%= btnLogin.ClientID %>');
+            var hiddenState = document.getElementById('<%= hdnAuthState.ClientID %>');
 
-            if (isRegister) {
-                if (loginHead) loginHead.style.display = 'none';
-                if (loginFooter) loginFooter.style.display = 'none';
-                if (regHead) regHead.style.display = 'block';
-                if (confirmGroup) confirmGroup.style.display = 'block';
-                if (regFooter) regFooter.style.display = 'block';
-                if (submitBtn) submitBtn.value = 'REGISTER ACCOUNT';
-                if (stateField) stateField.value = 'REGISTER';
-            } else {
-                if (regHead) regHead.style.display = 'none';
-                if (regFooter) regFooter.style.display = 'none';
-                if (loginHead) loginHead.style.display = 'block';
-                if (confirmGroup) confirmGroup.style.display = 'none';
-                if (loginFooter) loginFooter.style.display = 'block';
-                if (submitBtn) submitBtn.value = 'LOG IN';
-                if (stateField) stateField.value = 'LOGIN';
+            // Set all sections to hidden before selectively displaying the target layout mode
+            if(loginHead) loginHead.style.display = 'none';
+            if(regHead) regHead.style.display = 'none';
+            if(recHead) recHead.style.display = 'none';
+            if(userGroup) userGroup.style.display = 'block'; 
+            if(passGroup) passGroup.style.display = 'block';
+            if(confirmGroup) confirmGroup.style.display = 'none';
+            if(emailGroup) emailGroup.style.display = 'none';
+            if(loginFoot) loginFoot.style.display = 'none';
+            if(regFoot) regFoot.style.display = 'none';
+            if(recFoot) recFoot.style.display = 'none';
+
+            if (mode === 'REGISTER') {
+                if(regHead) regHead.style.display = 'block';
+                if(confirmGroup) confirmGroup.style.display = 'block';
+                if(regFoot) regFoot.style.display = 'block';
+                if(actionButton) actionButton.value = 'REGISTER ACCOUNT';
+                if(hiddenState) hiddenState.value = 'REGISTER';
+            } 
+            else if (mode === 'RECOVERY') {
+                if(recHead) recHead.style.display = 'block';
+                if(passGroup) passGroup.style.display = 'none'; // Clear out inputs irrelevant to validation tracking
+                if(emailGroup) emailGroup.style.display = 'block';
+                if(recFoot) recFoot.style.display = 'block';
+                if(actionButton) actionButton.value = 'RESET CREDEENTIALS';
+                if(hiddenState) hiddenState.value = 'RECOVERY';
+            } 
+            else {
+                // Default fallback to LOGIN mode layout properties
+                if(loginHead) loginHead.style.display = 'block';
+                if(loginFoot) loginFoot.style.display = 'block';
+                if(actionButton) actionButton.value = 'LOG IN';
+                if(hiddenState) hiddenState.value = 'LOGIN';
             }
 
-            var msgLabel = document.getElementById('<%= lblAuthMessage.ClientID %>');
-            if (msgLabel) msgLabel.innerHTML = '';
+            var labelFeedback = document.getElementById('<%= lblAuthMessage.ClientID %>');
+            if (labelFeedback) labelFeedback.innerHTML = '';
         }
 
-        // On postback verification checks, maintain user selection state view layout context
         window.onload = function () {
-            var stateField = document.getElementById('<%= hdnAuthState.ClientID %>');
-            if (stateField && stateField.value === 'REGISTER') {
-                toggleAuthView(true);
-            }
-        };
-    </script>
+    var hiddenState = document.getElementById('<%= hdnAuthState.ClientID %>');
+    if (hiddenState && hiddenState.value) {
+        switchAuthenticationView(hiddenState.value);
+    }
+};
+</script>
 </body>
 </html>
