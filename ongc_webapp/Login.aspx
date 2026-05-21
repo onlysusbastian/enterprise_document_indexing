@@ -131,10 +131,22 @@
             text-decoration: underline !important;
         }
 
+        .auth-toggle-link {
+            color: #800000;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .auth-toggle-link:hover {
+            text-decoration: underline;
+            color: #600000;
+        }
+
         .copyright-text {
             font-size: 0.75rem;
             color: #A0AEC0;
-            margin-top: 35px;
+            margin-top: 25px;
         }
 
         @media (max-width: 850px) {
@@ -158,8 +170,15 @@
                 <div class="login-form-side">
                     <div class="text-center text-md-start">
                         <img src="images/ongclogo.png" alt="ONGC Logo" class="ongc-brand-logo" />
-                        <h2 class="portal-title">Enterprise Portal</h2>
-                        <p class="text-muted mb-4" style="font-size: 0.95rem;">Management & Indexing System</p>
+                        
+                        <div id="loginHeader">
+                            <h2 class="portal-title">Enterprise Portal</h2>
+                            <p class="text-muted mb-4" style="font-size: 0.95rem;">Management & Indexing System</p>
+                        </div>
+                        <div id="registerHeader" style="display: none;">
+                            <h2 class="portal-title">Create Account</h2>
+                            <p class="text-muted mb-4" style="font-size: 0.95rem;">Register corporate access profile</p>
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -167,9 +186,20 @@
                         <asp:TextBox ID="txtUsername" runat="server" CssClass="form-control form-control-custom" placeholder="Enter your ID"></asp:TextBox>
                     </div>
 
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label class="form-label fw-bold text-secondary small" style="letter-spacing: 0.3px;">PASSWORD</label>
                         <asp:TextBox ID="txtPassword" runat="server" CssClass="form-control form-control-custom" TextMode="Password" placeholder="••••••••"></asp:TextBox>
+                    </div>
+
+                    <div class="mb-4" id="confirmPasswordGroup" style="display: none;">
+                        <label class="form-label fw-bold text-secondary small" style="letter-spacing: 0.3px;">CONFIRM PASSWORD</label>
+                        <asp:TextBox ID="txtConfirmPassword" runat="server" CssClass="form-control form-control-custom" TextMode="Password" placeholder="••••••••"></asp:TextBox>
+                    </div>
+
+                    <asp:HiddenField ID="hdnAuthState" runat="server" Value="LOGIN" />
+
+                    <div class="mb-2 text-center text-md-start">
+                        <asp:Label ID="lblAuthMessage" runat="server" CssClass="small fw-bold"></asp:Label>
                     </div>
 
                     <div class="d-grid">
@@ -177,16 +207,67 @@
                             CssClass="btn-ongc-submit" OnClick="btnLogin_Click" />
                     </div>
 
-                    <div class="text-center text-md-start mt-3">
-                        <a href="#" class="forgot-link text-decoration-none small text-muted">Forgot Password?</a>
+                    <div class="text-center text-md-start mt-3 small">
+                        <div id="loginFooterLinks">
+                            <a href="#" class="forgot-link text-decoration-none text-muted me-3">Forgot Password?</a>
+                            <span class="text-muted">New user? </span>
+                            <a class="auth-toggle-link" onclick="toggleAuthView(true)">Register Here</a>
+                        </div>
+                        <div id="registerFooterLinks" style="display: none;">
+                            <span class="text-muted">Already registered? </span>
+                            <a class="auth-toggle-link" onclick="toggleAuthView(false)">Log In Instead</a>
+                        </div>
                     </div>
 
                     <p class="copyright-text text-center text-md-start">
                         &copy; <%: DateTime.Now.Year %> Oil and Natural Gas Corporation Limited. All rights reserved.
                     </p>
                 </div>
+
             </div>
         </div>
     </form>
+
+    <script type="text/javascript">
+// @ts-nocheck
+function toggleAuthView(isRegister) {
+    var loginHead = document.getElementById('loginHeader');
+    var regHead = document.getElementById('registerHeader');
+    var confirmGroup = document.getElementById('confirmPasswordGroup');
+    var loginFooter = document.getElementById('loginFooterLinks');
+    var regFooter = document.getElementById('registerFooterLinks');
+    var submitBtn = document.getElementById('<%= btnLogin.ClientID %>');
+            var stateField = document.getElementById('<%= hdnAuthState.ClientID %>');
+
+            if (isRegister) {
+                if (loginHead) loginHead.style.display = 'none';
+                if (loginFooter) loginFooter.style.display = 'none';
+                if (regHead) regHead.style.display = 'block';
+                if (confirmGroup) confirmGroup.style.display = 'block';
+                if (regFooter) regFooter.style.display = 'block';
+                if (submitBtn) submitBtn.value = 'REGISTER ACCOUNT';
+                if (stateField) stateField.value = 'REGISTER';
+            } else {
+                if (regHead) regHead.style.display = 'none';
+                if (regFooter) regFooter.style.display = 'none';
+                if (loginHead) loginHead.style.display = 'block';
+                if (confirmGroup) confirmGroup.style.display = 'none';
+                if (loginFooter) loginFooter.style.display = 'block';
+                if (submitBtn) submitBtn.value = 'LOG IN';
+                if (stateField) stateField.value = 'LOGIN';
+            }
+
+            var msgLabel = document.getElementById('<%= lblAuthMessage.ClientID %>');
+            if (msgLabel) msgLabel.innerHTML = '';
+        }
+
+        // On postback verification checks, maintain user selection state view layout context
+        window.onload = function () {
+            var stateField = document.getElementById('<%= hdnAuthState.ClientID %>');
+            if (stateField && stateField.value === 'REGISTER') {
+                toggleAuthView(true);
+            }
+        };
+    </script>
 </body>
 </html>
