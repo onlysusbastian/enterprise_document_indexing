@@ -23,6 +23,13 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
+        .search-header {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 20px;
+        }
+
         .filter-label {
             font-size: 0.75rem;
             font-weight: 700;
@@ -32,9 +39,24 @@
             display: block;
         }
 
+        .status-label {
+            display: block;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+
+        .results-wrapper {
+            overflow-x: auto;
+            max-width: 100%;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+
         .grid-table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 1200px;
+            background: white;
         }
 
         .grid-table th {
@@ -44,6 +66,7 @@
             text-align: left;
             font-size: 0.85rem;
             border: 1px solid #ddd;
+            white-space: nowrap;
             position: sticky;
             top: 0;
             z-index: 2;
@@ -56,9 +79,10 @@
             word-break: break-word;
             font-size: 0.9rem;
             background-color: white;
+            min-width: 140px;
         }
 
-        .grid-table tr:nth-child(even) {
+        .grid-table tr:nth-child(even) td {
             background-color: #f8fafc;
         }
 
@@ -66,53 +90,55 @@
             background-color: #f1f5f9;
         }
 
-        .results-wrapper {
-            overflow-x: auto;
-            max-width: 100%;
-        }
-
-        .search-header {
-            font-size: 1.3rem;
+        .fixed-column {
             font-weight: 700;
             color: #1e293b;
-            margin-bottom: 20px;
         }
 
-        .status-label {
-            display: block;
-            margin-bottom: 15px;
-            font-size: 0.95rem;
+        .null-cell {
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        .search-panel {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .search-box {
+            flex: 1;
         }
 
     </style>
 
     <div class="container-fluid mt-4">
 
-        <!-- Search Section -->
+        <!-- Search Panel -->
 
         <div class="card-box">
 
             <div class="search-header">
-                Enterprise Metadata Search
+                Enterprise Metadata Search Engine
             </div>
 
-            <div class="row">
+            <div class="search-panel">
 
-                <div class="col-md-10">
+                <div class="search-box">
 
                     <span class="filter-label">
-                        Search Documents
+                        Search Across File Names, Paths & Metadata
                     </span>
 
                     <asp:TextBox ID="txtSearch"
                         runat="server"
                         CssClass="form-control"
-                        placeholder="Search file name, path, metadata values...">
+                        placeholder="Example: finance, employee, rack, Assam, project...">
                     </asp:TextBox>
 
                 </div>
 
-                <div class="col-md-2 d-flex align-items-end">
+                <div style="width: 180px;">
 
                     <asp:Button ID="btnSearch"
                         runat="server"
@@ -126,7 +152,7 @@
 
         </div>
 
-        <!-- Results Section -->
+        <!-- Results -->
 
         <div class="card-box">
 
@@ -143,9 +169,11 @@
                     runat="server"
                     CssClass="grid-table"
                     AutoGenerateColumns="True"
-                    GridLines="None"
+                    GridLines="Both"
+                    BorderStyle="None"
                     BorderWidth="0"
-                    HeaderStyle-Wrap="false">
+                    HeaderStyle-Wrap="false"
+                    RowStyle-Wrap="true">
 
                 </asp:GridView>
 

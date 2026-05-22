@@ -43,6 +43,7 @@ namespace ongc_webapp
             string query = @"
                 SELECT
                     id,
+                    source_excel_file,
                     file_name,
                     file_path,
                     dynamic_metadata
@@ -53,6 +54,7 @@ namespace ongc_webapp
                     OR file_name ILIKE @wildSearch
                     OR file_path ILIKE @wildSearch
                     OR dynamic_metadata::text ILIKE @wildSearch
+                    OR source_excel_file ILIKE @wildSearch
                 )
                 ORDER BY uploaded_at DESC";
 
@@ -61,14 +63,15 @@ namespace ongc_webapp
 
             // Fixed columns
             finalTable.Columns.Add("id");
+            finalTable.Columns.Add("source_excel_file");
             finalTable.Columns.Add("file_name");
             finalTable.Columns.Add("file_path");
 
-            // Store rows temporarily
+            // Temporary storage
             List<Dictionary<string, string>> allRows =
                 new List<Dictionary<string, string>>();
 
-            // Track all dynamic metadata keys
+            // Dynamic metadata keys
             HashSet<string> metadataColumns =
                 new HashSet<string>();
 
@@ -100,6 +103,9 @@ namespace ongc_webapp
                             rowMap["id"] =
                                 reader["id"].ToString();
 
+                            rowMap["source_excel_file"] =
+                                reader["source_excel_file"].ToString();
+
                             rowMap["file_name"] =
                                 reader["file_name"].ToString();
 
@@ -125,7 +131,7 @@ namespace ongc_webapp
                                         ? item.Value.ToString()
                                         : "";
 
-                                    // Store metadata
+                                    // Add metadata to row
                                     rowMap[key] = value;
 
                                     // Track dynamic columns
@@ -139,7 +145,7 @@ namespace ongc_webapp
                 }
             }
 
-            // Add dynamic metadata columns
+            // Add metadata columns dynamically
             foreach (string column in metadataColumns)
             {
                 if (!finalTable.Columns.Contains(column))
@@ -148,7 +154,7 @@ namespace ongc_webapp
                 }
             }
 
-            // Populate final DataTable rows
+            // Populate rows
             foreach (var rowMap in allRows)
             {
                 DataRow row = finalTable.NewRow();
@@ -169,8 +175,7 @@ namespace ongc_webapp
                 finalTable.Rows.Add(row);
             }
 
-            // IMPORTANT:
-            // Auto-generate dynamic columns
+            // Dynamic GridView generation
             gvDocuments.AutoGenerateColumns = true;
 
             gvDocuments.DataSource = finalTable;
