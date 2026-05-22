@@ -2,7 +2,6 @@
 using System.Configuration;
 using System.Data;
 using System.Web.UI;
-using System.Web.UI.WebControls;
 using Npgsql;
 
 namespace ongc_webapp
@@ -10,10 +9,19 @@ namespace ongc_webapp
     public partial class Indexing : System.Web.UI.Page
     {
         private string connString =
-            ConfigurationManager.ConnectionStrings["PostgresConnection"].ConnectionString;
+            ConfigurationManager
+            .ConnectionStrings["PostgresConn"]
+            .ConnectionString;
 
         protected void Page_Load(object sender, EventArgs e)
         {
+            // Optional session protection
+            if (Session["UserID"] == null)
+            {
+                Response.Redirect("Login.aspx");
+                return;
+            }
+
             if (!IsPostBack)
             {
                 BindDynamicVaultData();
@@ -27,24 +35,42 @@ namespace ongc_webapp
 
         private void BindDynamicVaultData()
         {
+            string searchTerm = txtSearch.Text.Trim();
+
             string query = @"
                 SELECT
-                    index_id,
+                    id,
                     file_name,
-                    region,
-                    doc_type,
-                    department,
-                    employee_assigned,
-                    project_name,
-                    uploader_identity
-                FROM public.indexed_documents
-                ORDER BY index_id DESC";
+                    file_path,
+                    dynamic_metadata,
+                    uploaded_at
+                FROM indexed_documents
+                WHERE
+                    (
+                        @search = ''
+                        OR file_name ILIKE @wildSearch
+                        OR file_path ILIKE @wildSearch
+                        OR dynamic_metadata::text ILIKE @wildSearch
+                    )
+                ORDER BY uploaded_at DESC";
 
-            using (NpgsqlConnection conn = new NpgsqlConnection(connString))
+            using (NpgsqlConnection conn =
+                new NpgsqlConnection(connString))
             {
-                using (NpgsqlCommand cmd = new NpgsqlCommand(query, conn))
+                using (NpgsqlCommand cmd =
+                    new NpgsqlCommand(query, conn))
                 {
-                    using (NpgsqlDataAdapter da = new NpgsqlDataAdapter(cmd))
+                    // Search parameters
+                    cmd.Parameters.AddWithValue(
+                        "@search",
+                        searchTerm);
+
+                    cmd.Parameters.AddWithValue(
+                        "@wildSearch",
+                        "%" + searchTerm + "%");
+
+                    using (NpgsqlDataAdapter da =
+                        new NpgsqlDataAdapter(cmd))
                     {
                         DataTable dt = new DataTable();
 
@@ -52,123 +78,15 @@ namespace ongc_webapp
 
                         gvDocuments.DataSource = dt;
                         gvDocuments.DataBind();
+
+                        // Optional status label
+                        lblStatus.Text =
+                            dt.Rows.Count +
+                            " result(s) found.";
+
+                        lblStatus.Style["display"] = "block";
                     }
                 }
-            }
-        }
-
-        protected void gvDocuments_RowEditing(object sender, GridViewEditEventArgs e)
-        {
-            gvDocuments.EditIndex = e.NewEditIndex;
-            BindDynamicVaultData();
-        }
-
-        protected void gvDocuments_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
-        {
-            gvDocuments.EditIndex = -1;
-            BindDynamicVaultData();
-        }
-
-        protected void gvDocuments_RowUpdating(object sender, GridViewUpdateEventArgs e)
-        {
-            try
-            {
-                string indexId =
-                    gvDocuments.DataKeys[e.RowIndex].Value.ToString();
-
-                GridViewRow row = gvDocuments.Rows[e.RowIndex];
-
-                string fileName =
-                    ((TextBox)row.FindControl("txtFileName")).Text;
-
-                string region =
-                    ((TextBox)row.FindControl("txtRegion")).Text;
-
-                string docType =
-                    ((TextBox)row.FindControl("txtDocType")).Text;
-
-                string department =
-                    ((TextBox)row.FindControl("txtDepartment")).Text;
-
-                string employee =
-                    ((TextBox)row.FindControl("txtEmployee")).Text;
-
-                string project =
-                    ((TextBox)row.FindControl("txtProject")).Text;
-
-                string uploader =
-                    ((TextBox)row.FindControl("txtUploader")).Text;
-
-                string query = @"
-                    UPDATE public.indexed_documents
-                    SET
-                        file_name = @file_name,
-                        region = @region,
-                        doc_type = @doc_type,
-                        department = @department,
-                        employee_assigned = @employee,
-                        project_name = @project,
-                        uploader_identity = @uploader
-                    WHERE index_id = @index_id";
-
-                using (NpgsqlConnection conn =
-                    new NpgsqlConnection(connString))
-                {
-                    conn.Open();
-
-                    using (NpgsqlCommand cmd =
-                        new NpgsqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@file_name", fileName);
-                        cmd.Parameters.AddWithValue("@region", region);
-                        cmd.Parameters.AddWithValue("@doc_type", docType);
-                        cmd.Parameters.AddWithValue("@department", department);
-                        cmd.Parameters.AddWithValue("@employee", employee);
-                        cmd.Parameters.AddWithValue("@project", project);
-                        cmd.Parameters.AddWithValue("@uploader", uploader);
-                        cmd.Parameters.AddWithValue("@index_id", indexId);
-
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-
-                gvDocuments.EditIndex = -1;
-
-                BindDynamicVaultData();
-
-                lblStatus.Style["display"] = "block";
-                lblStatus.Style["opacity"] = "1";
-                lblStatus.Text = "Updated successfully.";
-
-                ClientScript.RegisterStartupScript(
-                    this.GetType(),
-                    "fadeLabel",
-                    @"
-                    setTimeout(function () {
-                        var lbl =
-                        document.getElementById('" + lblStatus.ClientID + @"');
-
-                        if (lbl) {
-
-                            lbl.style.transition = 'opacity 1s';
-                            lbl.style.opacity = '0';
-
-                            setTimeout(function () {
-                                lbl.style.display = 'none';
-                            }, 1000);
-                        }
-                    }, 2000);
-                    ",
-                    true
-                );
-            }
-            catch (Exception ex)
-            {
-                Response.Write(
-                    "<script>alert('ERROR: " +
-                    ex.Message.Replace("'", "") +
-                    "');</script>"
-                );
             }
         }
     }

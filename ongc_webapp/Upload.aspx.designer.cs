@@ -11,43 +11,61 @@ namespace ongc_webapp
 {
 
 
-    public partial class Indexing
+    public partial class Upload
     {
 
         /// <summary>
-        /// txtSearch control.
+        /// txtTableName control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSearch;
+        protected global::System.Web.UI.WebControls.TextBox txtTableName;
 
         /// <summary>
-        /// btnSearch control.
+        /// filePayload control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnSearch;
+        protected global::System.Web.UI.WebControls.FileUpload filePayload;
 
         /// <summary>
-        /// lblStatus control.
+        /// hdnGridHeaders control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblStatus;
+        protected global::System.Web.UI.WebControls.HiddenField hdnGridHeaders;
 
         /// <summary>
-        /// gvDocuments control.
+        /// hdnGridRows control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.GridView gvDocuments;
+        protected global::System.Web.UI.WebControls.HiddenField hdnGridRows;
+
+        /// <summary>
+        /// lblStatusFeedback control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblStatusFeedback;
+
+        /// <summary>
+        /// btnIngestData control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnIngestData;
     }
 }
