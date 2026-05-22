@@ -35,7 +35,6 @@
         .grid-table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed;
         }
 
         .grid-table th {
@@ -44,13 +43,17 @@
             padding: 12px;
             text-align: left;
             font-size: 0.85rem;
+            border: 1px solid #ddd;
+            position: sticky;
+            top: 0;
+            z-index: 2;
         }
 
         .grid-table td {
             padding: 12px;
             border: 1px solid #ddd;
             vertical-align: top;
-            word-wrap: break-word;
+            word-break: break-word;
             font-size: 0.9rem;
             background-color: white;
         }
@@ -59,8 +62,26 @@
             background-color: #f8fafc;
         }
 
-        .grid-table tr:hover {
+        .grid-table tr:hover td {
             background-color: #f1f5f9;
+        }
+
+        .results-wrapper {
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        .search-header {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 20px;
+        }
+
+        .status-label {
+            display: block;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
         }
 
     </style>
@@ -70,6 +91,10 @@
         <!-- Search Section -->
 
         <div class="card-box">
+
+            <div class="search-header">
+                Enterprise Metadata Search
+            </div>
 
             <div class="row">
 
@@ -82,7 +107,7 @@
                     <asp:TextBox ID="txtSearch"
                         runat="server"
                         CssClass="form-control"
-                        placeholder="Search file name, path, metadata...">
+                        placeholder="Search file name, path, metadata values...">
                     </asp:TextBox>
 
                 </div>
@@ -107,40 +132,24 @@
 
             <asp:Label ID="lblStatus"
                 runat="server"
+                CssClass="status-label"
                 ForeColor="Green"
                 Font-Bold="true">
             </asp:Label>
 
-            <br />
-            <br />
+            <div class="results-wrapper">
 
-            <asp:GridView ID="gvDocuments"
-                runat="server"
-                CssClass="grid-table"
-                AutoGenerateColumns="False"
-                GridLines="None">
+                <asp:GridView ID="gvDocuments"
+                    runat="server"
+                    CssClass="grid-table"
+                    AutoGenerateColumns="True"
+                    GridLines="None"
+                    BorderWidth="0"
+                    HeaderStyle-Wrap="false">
 
-                <Columns>
+                </asp:GridView>
 
-                    <asp:BoundField
-                        DataField="id"
-                        HeaderText="ID" />
-
-                    <asp:BoundField
-                        DataField="file_name"
-                        HeaderText="File Name" />
-
-                    <asp:BoundField
-                        DataField="file_path"
-                        HeaderText="File Path" />
-
-                    <asp:BoundField
-                        DataField="dynamic_metadata"
-                        HeaderText="Metadata" />
-
-                </Columns>
-
-            </asp:GridView>
+            </div>
 
         </div>
 
