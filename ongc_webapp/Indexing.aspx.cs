@@ -3,6 +3,7 @@ using System.Configuration;
 using System.Data;
 using System.Collections.Generic;
 using System.Web.UI;
+using System.Web.UI.WebControls;
 using Npgsql;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -18,7 +19,6 @@ namespace ongc_webapp
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            // Session protection
             if (Session["UserID"] == null)
             {
                 Response.Redirect("Login.aspx");
@@ -32,6 +32,11 @@ namespace ongc_webapp
         }
 
         protected void btnSearch_Click(object sender, EventArgs e)
+        {
+            BindDynamicVaultData();
+        }
+
+        protected void btnApplyColumns_Click(object sender, EventArgs e)
         {
             BindDynamicVaultData();
         }
@@ -58,7 +63,7 @@ namespace ongc_webapp
                 )
                 ORDER BY uploaded_at DESC";
 
-            // Final dynamic table
+            // Final table
             DataTable finalTable = new DataTable();
 
             // Fixed columns
@@ -67,11 +72,11 @@ namespace ongc_webapp
             finalTable.Columns.Add("file_name");
             finalTable.Columns.Add("file_path");
 
-            // Temporary storage
+            // Temporary row storage
             List<Dictionary<string, string>> allRows =
                 new List<Dictionary<string, string>>();
 
-            // Dynamic metadata keys
+            // Dynamic metadata columns
             HashSet<string> metadataColumns =
                 new HashSet<string>();
 
@@ -112,7 +117,7 @@ namespace ongc_webapp
                             rowMap["file_path"] =
                                 reader["file_path"].ToString();
 
-                            // Read metadata JSON
+                            // Metadata JSON
                             string metadataJson =
                                 reader["dynamic_metadata"].ToString();
 
@@ -131,10 +136,8 @@ namespace ongc_webapp
                                         ? item.Value.ToString()
                                         : "";
 
-                                    // Add metadata to row
                                     rowMap[key] = value;
 
-                                    // Track dynamic columns
                                     metadataColumns.Add(key);
                                 }
                             }
@@ -145,16 +148,82 @@ namespace ongc_webapp
                 }
             }
 
-            // Add metadata columns dynamically
+            // ============================================
+            // DYNAMIC FILTER CHECKBOX GENERATION
+            // ============================================
+
             foreach (string column in metadataColumns)
             {
-                if (!finalTable.Columns.Contains(column))
+                if (cblColumns.Items.FindByValue(column) == null)
                 {
-                    finalTable.Columns.Add(column);
+                    ListItem item =
+                        new ListItem(column, column);
+
+                    // IMPORTANT:
+                    // Start unchecked
+                    item.Selected = false;
+
+                    cblColumns.Items.Add(item);
                 }
             }
 
-            // Populate rows
+            // ============================================
+            // FILTER LOGIC
+            // ============================================
+
+            bool anyFilterSelected = false;
+
+            // Check if any filter is selected
+            foreach (ListItem item in cblColumns.Items)
+            {
+                if (item.Selected)
+                {
+                    anyFilterSelected = true;
+                    break;
+                }
+            }
+
+            // ============================================
+            // CASE 1:
+            // No filters selected
+            // → Show ALL metadata columns
+            // ============================================
+
+            if (!anyFilterSelected)
+            {
+                foreach (string column in metadataColumns)
+                {
+                    if (!finalTable.Columns.Contains(column))
+                    {
+                        finalTable.Columns.Add(column);
+                    }
+                }
+            }
+
+            // ============================================
+            // CASE 2:
+            // Filters selected
+            // → Show ONLY selected columns
+            // ============================================
+
+            else
+            {
+                foreach (ListItem item in cblColumns.Items)
+                {
+                    if (item.Selected)
+                    {
+                        if (!finalTable.Columns.Contains(item.Value))
+                        {
+                            finalTable.Columns.Add(item.Value);
+                        }
+                    }
+                }
+            }
+
+            // ============================================
+            // POPULATE TABLE ROWS
+            // ============================================
+
             foreach (var rowMap in allRows)
             {
                 DataRow row = finalTable.NewRow();
@@ -175,7 +244,10 @@ namespace ongc_webapp
                 finalTable.Rows.Add(row);
             }
 
-            // Dynamic GridView generation
+            // ============================================
+            // BIND GRID
+            // ============================================
+
             gvDocuments.AutoGenerateColumns = true;
 
             gvDocuments.DataSource = finalTable;
@@ -184,8 +256,6 @@ namespace ongc_webapp
             lblStatus.Text =
                 finalTable.Rows.Count +
                 " result(s) found.";
-
-            lblStatus.Style["display"] = "block";
         }
     }
 }

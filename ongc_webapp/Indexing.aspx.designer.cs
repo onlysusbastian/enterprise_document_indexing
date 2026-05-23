@@ -33,6 +33,24 @@ namespace ongc_webapp
         protected global::System.Web.UI.WebControls.Button btnSearch;
 
         /// <summary>
+        /// cblColumns control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.CheckBoxList cblColumns;
+
+        /// <summary>
+        /// btnApplyColumns control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnApplyColumns;
+
+        /// <summary>
         /// lblStatus control.
         /// </summary>
         /// <remarks>

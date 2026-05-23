@@ -90,16 +90,6 @@
             background-color: #f1f5f9;
         }
 
-        .fixed-column {
-            font-weight: 700;
-            color: #1e293b;
-        }
-
-        .null-cell {
-            color: #94a3b8;
-            font-style: italic;
-        }
-
         .search-panel {
             display: flex;
             gap: 15px;
@@ -107,6 +97,52 @@
         }
 
         .search-box {
+            flex: 1;
+        }
+
+        .layout-wrapper {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .filter-sidebar {
+            width: 260px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 20px;
+        }
+
+        .filter-sidebar h5 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #1e293b;
+        }
+
+        .checkbox-list {
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .checkbox-list input {
+            margin-right: 8px;
+        }
+
+        .checkbox-list label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #334155;
+        }
+
+        .main-results {
             flex: 1;
         }
 
@@ -152,30 +188,61 @@
 
         </div>
 
-        <!-- Results -->
+        <!-- Layout -->
 
-        <div class="card-box">
+        <div class="layout-wrapper">
 
-            <asp:Label ID="lblStatus"
-                runat="server"
-                CssClass="status-label"
-                ForeColor="Green"
-                Font-Bold="true">
-            </asp:Label>
+            <!-- Sidebar Filters -->
 
-            <div class="results-wrapper">
+            <div class="filter-sidebar">
 
-                <asp:GridView ID="gvDocuments"
+                <h5>Visible Metadata Columns</h5>
+
+                <asp:CheckBoxList ID="cblColumns"
                     runat="server"
-                    CssClass="grid-table"
-                    AutoGenerateColumns="True"
-                    GridLines="Both"
-                    BorderStyle="None"
-                    BorderWidth="0"
-                    HeaderStyle-Wrap="false"
-                    RowStyle-Wrap="true">
+                    CssClass="checkbox-list">
+                </asp:CheckBoxList>
 
-                </asp:GridView>
+                <br />
+
+                <asp:Button ID="btnApplyColumns"
+                    runat="server"
+                    Text="Apply Column Filters"
+                    CssClass="btn btn-primary w-100"
+                    OnClick="btnApplyColumns_Click" />
+
+            </div>
+
+            <!-- Results -->
+
+            <div class="main-results">
+
+                <div class="card-box">
+
+                    <asp:Label ID="lblStatus"
+                        runat="server"
+                        CssClass="status-label"
+                        ForeColor="Green"
+                        Font-Bold="true">
+                    </asp:Label>
+
+                    <div class="results-wrapper">
+
+                        <asp:GridView ID="gvDocuments"
+                            runat="server"
+                            CssClass="grid-table"
+                            AutoGenerateColumns="True"
+                            GridLines="Both"
+                            BorderStyle="None"
+                            BorderWidth="0"
+                            HeaderStyle-Wrap="false"
+                            RowStyle-Wrap="true">
+
+                        </asp:GridView>
+
+                    </div>
+
+                </div>
 
             </div>
 
