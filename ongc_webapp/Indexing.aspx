@@ -40,14 +40,13 @@
             width: 320px;
             min-width: 320px;
             max-width: 320px;
+            height: 82vh;
             background: white;
             border-radius: 10px;
-            padding: 20px;
+            padding: 18px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            max-height: 85vh;
-            overflow: hidden;
             position: sticky;
-            top: 20px;
+            top: 15px;
             display: flex;
             flex-direction: column;
         }
@@ -75,18 +74,50 @@
             display: none;
         }
 
+        .metadata-filter-search {
+            margin-bottom: 15px;
+        }
+
+        .metadata-scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .metadata-filter-footer {
+            margin-top: 15px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+            background: white;
+        }
+
+        .sticky-horizontal-scroll {
+            overflow-x: auto;
+            overflow-y: hidden;
+            height: 18px;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 20;
+        }
+
+        .sticky-horizontal-scroll div {
+            height: 1px;
+        }
+
         .results-wrapper {
             width: 100%;
             overflow-x: auto;
             overflow-y: auto;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
+            max-height: 78vh;
         }
 
         .grid-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 1200px;
+            min-width: 1600px;
             background: white;
         }
 
@@ -110,7 +141,7 @@
             word-break: break-word;
             font-size: 0.9rem;
             background-color: white;
-            min-width: 140px;
+            min-width: 180px;
         }
 
         .column-panel {
@@ -135,29 +166,21 @@
             gap: 12px;
         }
 
-        .checkbox-list input {
-            margin-right: 4px;
+        .search-highlight {
+            background-color: yellow;
+            color: black;
+            font-weight: bold;
+            padding: 2px;
+            border-radius: 2px;
         }
 
-        .metadata-scroll-area {
-            flex: 1;
-            overflow-y: auto;
-            padding-right: 6px;
-            margin-top: 10px;
-        }
-
-        .metadata-filter-footer {
-            margin-top: 15px;
-            padding-top: 12px;
-            border-top: 1px solid #e2e8f0;
-            background: white;
-            position: sticky;
-            bottom: 0;
-        }
+        
 
     </style>
 
     <script type="text/javascript">
+
+// @ts-nocheck
 
 function toggleFilterTextbox(id) {
 
@@ -201,11 +224,118 @@ function toggleColumnFilter() {
     }
 }
 
+function filterMetadataFilters() {
+
+    var input =
+        document.getElementById("txtMetadataSearch");
+
+    if (!input)
+        return;
+
+    var filter =
+        input.value.toLowerCase();
+
+    var rows =
+        document.getElementsByClassName("filter-row");
+
+    for (var i = 0; i < rows.length; i++) {
+
+        var row = rows[i];
+
+        var text =
+            row.innerText.toLowerCase();
+
+        if (text.indexOf(filter) > -1) {
+
+            row.style.display = "";
+        }
+        else {
+
+            row.style.display = "none";
+        }
+    }
+}
+
+function syncHorizontalScroll(source, targetId) {
+
+    var target =
+        document.getElementById(targetId);
+
+    if (!target)
+        return;
+
+    target.scrollLeft =
+        source.scrollLeft;
+}
+
+function selectAllColumns(selectAll) {
+
+    var container =
+        document.getElementById("columnPanel");
+
+    if (!container)
+        return;
+
+    var checkboxes =
+        container.querySelectorAll(
+            "input[type='checkbox']"
+        );
+
+    for (var i = 0; i < checkboxes.length; i++) {
+
+        checkboxes[i].checked =
+            selectAll;
+    }
+}
+
+function scrollToFocusedColumn() {
+
+    var target =
+        document.querySelector(
+            ".auto-focus-column");
+
+    if (!target)
+        return;
+
+    target.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest"
+    });
+}
+
+window.onload = function () {
+
+    var results =
+        document.getElementById("mainResults");
+
+    var topScroll =
+        document.getElementById("topScroll");
+
+    var topScrollContent =
+        document.getElementById("topScrollContent");
+
+    if (
+        results &&
+        topScroll &&
+        topScrollContent
+    ) {
+        topScrollContent.style.width =
+            results.scrollWidth + "px";
+
+        topScroll.onscroll = function () {
+
+            results.scrollLeft =
+                topScroll.scrollLeft;
+        };
+    }
+
+    scrollToFocusedColumn();
+};
+
 </script>
 
     <div class="container-fluid mt-4">
-
-        <!-- SEARCH -->
 
         <div class="card-box">
 
@@ -218,13 +348,12 @@ function toggleColumnFilter() {
                 <div class="col-md-8">
 
                     <label>
-                        Keyword Search (Maximum 3)
+                        Keyword Search
                     </label>
 
                     <asp:TextBox ID="txtSearch"
                         runat="server"
-                        CssClass="form-control"
-                        placeholder="finance assam vendor">
+                        CssClass="form-control">
                     </asp:TextBox>
 
                 </div>
@@ -263,8 +392,6 @@ function toggleColumnFilter() {
 
             </div>
 
-            <!-- COLUMN FILTERS -->
-
             <button type="button"
                 class="btn btn-secondary mt-4"
                 onclick="toggleColumnFilter()">
@@ -297,21 +424,25 @@ function toggleColumnFilter() {
 
                     <div class="col-md-4">
 
-                        <asp:Button ID="btnSelectAll"
-                            runat="server"
-                            Text="Select All"
-                            CssClass="btn btn-success w-100"
-                            OnClick="btnSelectAll_Click" />
+                        <button type="button"
+                            class="btn btn-success w-100"
+                            onclick="selectAllColumns(true)">
+
+                            Select All
+
+                        </button>
 
                     </div>
 
                     <div class="col-md-4">
 
-                        <asp:Button ID="btnClearAll"
-                            runat="server"
-                            Text="Clear All"
-                            CssClass="btn btn-secondary w-100"
-                            OnClick="btnClearAll_Click" />
+                        <button type="button"
+                            class="btn btn-secondary w-100"
+                            onclick="selectAllColumns(false)">
+
+                            Clear All
+
+                        </button>
 
                     </div>
 
@@ -331,17 +462,23 @@ function toggleColumnFilter() {
 
         </div>
 
-        <!-- MAIN -->
-
         <div class="layout-wrapper">
-
-            <!-- SIDEBAR -->
 
             <div class="filter-sidebar">
 
                 <h5>
                     Metadata Filters
                 </h5>
+
+                <div class="metadata-filter-search">
+
+                    <input type="text"
+                        id="txtMetadataSearch"
+                        class="form-control"
+                        placeholder="Search metadata filters..."
+                        onkeyup="filterMetadataFilters()" />
+
+                </div>
 
                 <div class="metadata-scroll-area">
 
@@ -363,8 +500,6 @@ function toggleColumnFilter() {
 
             </div>
 
-            <!-- RESULTS -->
-
             <div class="main-results">
 
                 <div class="card-box">
@@ -378,7 +513,16 @@ function toggleColumnFilter() {
                     <br />
                     <br />
 
-                    <div class="results-wrapper">
+                    <div class="sticky-horizontal-scroll"
+                        id="topScroll">
+
+                        <div id="topScrollContent"></div>
+
+                    </div>
+
+                    <div class="results-wrapper"
+                        id="mainResults"
+                        onscroll="syncHorizontalScroll(this, 'topScroll')">
 
                         <asp:GridView ID="gvDocuments"
                             runat="server"

@@ -18,6 +18,8 @@ namespace ongc_webapp
             .ConnectionStrings["PostgresConn"]
             .ConnectionString;
 
+        private string focusedColumn = "";
+
         protected void Page_Load(object sender, EventArgs e)
         {
             if (Session["UserID"] == null)
@@ -50,22 +52,6 @@ namespace ongc_webapp
             BindDynamicVaultData();
         }
 
-        protected void btnSelectAll_Click(object sender, EventArgs e)
-        {
-            foreach (ListItem item in cblColumns.Items)
-            {
-                item.Selected = true;
-            }
-        }
-
-        protected void btnClearAll_Click(object sender, EventArgs e)
-        {
-            foreach (ListItem item in cblColumns.Items)
-            {
-                item.Selected = false;
-            }
-        }
-
         private void GenerateDynamicFilters(
             HashSet<string> availableColumns)
         {
@@ -80,8 +66,6 @@ namespace ongc_webapp
                 CheckBox cb = new CheckBox();
 
                 cb.ID = "cb_" + column;
-
-                // persist checked state
 
                 bool isChecked =
                     Request.Form[cb.UniqueID] == "on";
@@ -125,8 +109,6 @@ namespace ongc_webapp
 
                 txt.ID = "txt_" + column;
 
-                // persist textbox value
-
                 string textboxValue =
                     Request.Form[txt.UniqueID];
 
@@ -159,12 +141,10 @@ namespace ongc_webapp
         }
 
         private HashSet<string> GetFilteredMetadataColumns(
-        List<Dictionary<string, string>> allRows)
+    List<Dictionary<string, string>> allRows)
         {
             HashSet<string> columns =
                 new HashSet<string>();
-
-            // visible columns from old filter
 
             HashSet<string> selectedColumns =
                 new HashSet<string>();
@@ -191,27 +171,24 @@ namespace ongc_webapp
                         ? kv.Value.ToString()
                         : "";
 
-                    // skip system columns
+                    // SKIP SYSTEM COLUMNS ONLY
 
                     if (
-                        key == "id" ||
-                        key == "source_excel_file" ||
-                        key == "file_name" ||
-                        key == "file_path"
+                        key.Equals(
+                            "file_name",
+                            StringComparison.OrdinalIgnoreCase)
                     )
                     {
                         continue;
                     }
 
-                    // skip empty values
-
-                    if (string.IsNullOrWhiteSpace(value) ||
-                        value == "NULL")
+                    if (
+                        string.IsNullOrWhiteSpace(value) ||
+                        value == "NULL"
+                    )
                     {
                         continue;
                     }
-
-                    // apply old column filter
 
                     if (anySelected)
                     {
@@ -248,16 +225,12 @@ namespace ongc_webapp
             DataTable finalTable =
                 new DataTable();
 
-            finalTable.Columns.Add("id");
-            finalTable.Columns.Add("source_excel_file");
+            
             finalTable.Columns.Add("file_name");
-            finalTable.Columns.Add("file_path");
+
 
             List<Dictionary<string, string>> allRows =
                 new List<Dictionary<string, string>>();
-
-            HashSet<string> metadataColumns =
-                new HashSet<string>();
 
             string query = @"
                 SELECT
@@ -271,8 +244,6 @@ namespace ongc_webapp
             List<string> whereConditions =
                 new List<string>();
 
-            // KEYWORD SEARCH
-
             if (keywords.Count > 0)
             {
                 List<string> keywordConditions =
@@ -282,9 +253,10 @@ namespace ongc_webapp
                 {
                     keywordConditions.Add($@"
                     (
-                        file_name ILIKE @kw{i}
-                        OR source_excel_file ILIKE @kw{i}
-                        OR dynamic_metadata::text ILIKE @kw{i}
+                        (
+                     file_name ILIKE @kw{i}
+                     OR dynamic_metadata::text ILIKE @kw{i}
+)
                     )");
                 }
 
@@ -294,32 +266,6 @@ namespace ongc_webapp
                         $" {searchMode} ",
                         keywordConditions) +
                     ")");
-            }
-
-            // METADATA FILTERS
-
-            foreach (string key in Request.Form.AllKeys)
-            {
-                if (key != null &&
-                    key.Contains("txt_"))
-                {
-                    string value =
-                        Request.Form[key];
-
-                    if (!string.IsNullOrWhiteSpace(value))
-                    {
-                        string column =
-                            key.Substring(
-                                key.IndexOf("txt_") + 4);
-
-                        string param =
-                            "@filter_" +
-                            column.Replace(" ", "_");
-
-                        whereConditions.Add(
-                            $"dynamic_metadata->>'{column}' ILIKE {param}");
-                    }
-                }
             }
 
             if (whereConditions.Count > 0)
@@ -342,37 +288,11 @@ namespace ongc_webapp
                 using (NpgsqlCommand cmd =
                     new NpgsqlCommand(query, conn))
                 {
-                    // KEYWORDS
-
                     for (int i = 0; i < keywords.Count; i++)
                     {
                         cmd.Parameters.AddWithValue(
                             $"@kw{i}",
                             "%" + keywords[i] + "%");
-                    }
-
-                    // FILTER PARAMETERS
-
-                    foreach (string key in Request.Form.AllKeys)
-                    {
-                        if (key != null &&
-                            key.Contains("txt_"))
-                        {
-                            string value =
-                                Request.Form[key];
-
-                            if (!string.IsNullOrWhiteSpace(value))
-                            {
-                                string column =
-                                    key.Substring(
-                                        key.IndexOf("txt_") + 4);
-
-                                cmd.Parameters.AddWithValue(
-                                    "@filter_" +
-                                    column.Replace(" ", "_"),
-                                    "%" + value.Trim() + "%");
-                            }
-                        }
                     }
 
                     using (NpgsqlDataReader reader =
@@ -383,29 +303,11 @@ namespace ongc_webapp
                             Dictionary<string, string> rowMap =
                                 new Dictionary<string, string>();
 
-                            rowMap["id"] =
-                                reader["id"].ToString();
-
-                            rowMap["source_excel_file"] =
-                                reader["source_excel_file"].ToString();
 
                             rowMap["file_name"] =
                                 reader["file_name"].ToString();
 
-                            string originalPath =
-                                reader["file_path"].ToString();
-
-                            string encodedPath =
-                                Server.UrlEncode(originalPath);
-
-                            rowMap["file_path"] =
-                                "<a target='_blank' " +
-                                "style='color:#2563eb;text-decoration:underline;' " +
-                                "href='OpenFolder.aspx?path=" +
-                                encodedPath +
-                                "'>" +
-                                originalPath +
-                                "</a>";
+                            
 
                             string metadataJson =
                                 reader["dynamic_metadata"]
@@ -429,8 +331,6 @@ namespace ongc_webapp
                                         : "NULL";
 
                                     rowMap[key] = value;
-
-                                    metadataColumns.Add(key);
                                 }
                             }
 
@@ -440,14 +340,189 @@ namespace ongc_webapp
                 }
             }
 
-            // FILTERS BASED ON CURRENT RESULTS
+            // AUTO DETECT BEST COLUMN
+
+            Dictionary<string, int> columnScores =
+                new Dictionary<string, int>();
+
+            foreach (var rowMap in allRows)
+            {
+                foreach (var kv in rowMap)
+                {
+                    if (
+                        kv.Key.Equals(
+                            "file_name",
+                            StringComparison.OrdinalIgnoreCase)
+                    )
+                    {
+                        continue;
+                    }
+                    string column =
+                        kv.Key;
+
+                    string value =
+                        kv.Value != null
+                        ? kv.Value.ToString().ToLower()
+                        : "";
+
+                    foreach (string keyword in keywords)
+                    {
+                        if (
+                            value.Contains(
+                                keyword.ToLower())
+                        )
+                        {
+                            if (!columnScores.ContainsKey(column))
+                            {
+                                columnScores[column] = 0;
+                            }
+
+                            columnScores[column]++;
+                        }
+                    }
+                }
+            }
+
+            if (columnScores.Count > 0)
+            {
+                focusedColumn =
+                    columnScores
+                    .OrderByDescending(x => x.Value)
+                    .First()
+                    .Key;
+            }
 
             HashSet<string> filteredColumns =
                 GetFilteredMetadataColumns(allRows);
 
-            GenerateDynamicFilters(filteredColumns);
+            // DYNAMICALLY HIDE FILTERS
+            // BASED ON CURRENT DATA
 
-            // COLUMN FILTERS
+            foreach (Control ctrl in phDynamicFilters.Controls)
+            {
+                Panel panel = ctrl as Panel;
+
+                if (panel == null)
+                    continue;
+
+                CheckBox cb = null;
+
+                foreach (Control inner in panel.Controls)
+                {
+                    if (inner is CheckBox)
+                    {
+                        cb = (CheckBox)inner;
+                        break;
+                    }
+                }
+
+                if (cb == null)
+                    continue;
+
+                string columnName =
+                    cb.ID.Replace("cb_", "");
+
+                if (
+                    filteredColumns.Contains(columnName)
+                )
+                {
+                    panel.Visible = true;
+                }
+                else
+                {
+                    panel.Visible = false;
+                }
+            }
+
+            // APPLY METADATA FILTERS
+
+            List<Dictionary<string, string>> filteredRows =
+                new List<Dictionary<string, string>>();
+
+            foreach (var rowMap in allRows)
+            {
+                bool matches = true;
+
+                foreach (Control ctrl in phDynamicFilters.Controls)
+                {
+                    Panel panel = ctrl as Panel;
+
+                    if (panel == null)
+                        continue;
+
+                    CheckBox cb = null;
+                    TextBox txt = null;
+
+                    foreach (Control inner in panel.Controls)
+                    {
+                        if (inner is CheckBox)
+                        {
+                            cb = (CheckBox)inner;
+                        }
+
+                        if (inner is Panel)
+                        {
+                            Panel txtPanel =
+                                (Panel)inner;
+
+                            foreach (
+                                Control txtCtrl
+                                in txtPanel.Controls
+                            )
+                            {
+                                if (txtCtrl is TextBox)
+                                {
+                                    txt = (TextBox)txtCtrl;
+                                }
+                            }
+                        }
+                    }
+
+                    if (
+                        cb != null &&
+                        cb.Checked &&
+                        txt != null &&
+                        !string.IsNullOrWhiteSpace(txt.Text)
+                    )
+                    {
+                        string columnName =
+                            cb.ID.Replace("cb_", "");
+
+                        string filterValue =
+                            txt.Text
+                            .Trim()
+                            .ToLower();
+
+                        string actualValue = "";
+
+                        if (
+                            rowMap.ContainsKey(columnName)
+                        )
+                        {
+                            actualValue =
+                                rowMap[columnName]
+                                .ToLower();
+                        }
+
+                        if (
+                            !actualValue.Contains(
+                                filterValue)
+                        )
+                        {
+                            matches = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (matches)
+                {
+                    filteredRows.Add(rowMap);
+                }
+            }
+
+            // REPLACE ORIGINAL ROWS
+            allRows = filteredRows;
 
             bool anyColumnsSelected = false;
 
@@ -496,8 +571,30 @@ namespace ongc_webapp
                 {
                     if (rowMap.ContainsKey(col.ColumnName))
                     {
-                        row[col.ColumnName] =
+                        string cellValue =
                             rowMap[col.ColumnName];
+
+                        foreach (string keyword in keywords)
+                        {
+                            if (
+                                !string.IsNullOrWhiteSpace(keyword)
+                            )
+                            {
+                                cellValue =
+                                    System.Text.RegularExpressions.Regex
+                                    .Replace(
+                                        cellValue,
+                                        keyword,
+                                        "<span class='search-highlight'>" +
+                                        keyword +
+                                        "</span>",
+                                        System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                                    );
+                            }
+                        }
+
+                        row[col.ColumnName] =
+                            cellValue;
                     }
                     else
                     {
@@ -519,8 +616,8 @@ namespace ongc_webapp
         }
 
         protected void gvDocuments_PageIndexChanging(
-        object sender,
-        GridViewPageEventArgs e)
+            object sender,
+            GridViewPageEventArgs e)
         {
             gvDocuments.PageIndex =
                 e.NewPageIndex;
@@ -528,16 +625,122 @@ namespace ongc_webapp
             BindDynamicVaultData();
         }
 
-        protected void gvDocuments_RowDataBound(
-            object sender,
-            GridViewRowEventArgs e)
+        protected override void OnInit(EventArgs e)
         {
-            if (e.Row.RowType ==
-                DataControlRowType.DataRow)
+            base.OnInit(e);
+
+            RestoreDynamicFilters();
+        }
+
+        private void RestoreDynamicFilters()
+        {
+            HashSet<string> columns =
+                new HashSet<string>();
+
+            using (
+                NpgsqlConnection conn =
+                new NpgsqlConnection(connString)
+            )
             {
-                for (int i = 0;
+                conn.Open();
+
+                string query = @"
+            SELECT dynamic_metadata
+            FROM indexed_documents
+            LIMIT 200";
+
+                using (
+                    NpgsqlCommand cmd =
+                    new NpgsqlCommand(query, conn)
+                )
+                {
+                    using (
+                        NpgsqlDataReader reader =
+                        cmd.ExecuteReader()
+                    )
+                    {
+                        while (reader.Read())
+                        {
+                            string metadataJson =
+                                reader["dynamic_metadata"]
+                                .ToString();
+
+                            if (
+                                string.IsNullOrWhiteSpace(
+                                    metadataJson)
+                            )
+                            {
+                                continue;
+                            }
+
+                            JObject metadata =
+                                JsonConvert
+                                .DeserializeObject<JObject>(
+                                    metadataJson);
+
+                            foreach (var item in metadata)
+                            {
+                                if (
+                                    item.Key.Equals(
+                                        "file_name",
+                                        StringComparison
+                                        .OrdinalIgnoreCase)
+                                )
+                                {
+                                    continue;
+                                }
+
+                                columns.Add(item.Key);
+                            }
+                        }
+                    }
+                }
+            }
+
+            GenerateDynamicFilters(columns);
+        }
+
+        protected void gvDocuments_RowDataBound(
+      object sender,
+      GridViewRowEventArgs e)
+        {
+            if (
+                e.Row.RowType ==
+                DataControlRowType.Header
+            )
+            {
+                for (
+                    int i = 0;
                     i < e.Row.Cells.Count;
-                    i++)
+                    i++
+                )
+                {
+                    string header =
+                        e.Row.Cells[i].Text;
+
+                    if (
+                        header.Equals(
+                            focusedColumn,
+                            StringComparison
+                            .OrdinalIgnoreCase)
+                    )
+                    {
+                        e.Row.Cells[i].Attributes["class"] =
+                            "auto-focus-column";
+                    }
+                }
+            }
+
+            if (
+                e.Row.RowType ==
+                DataControlRowType.DataRow
+            )
+            {
+                for (
+                    int i = 0;
+                    i < e.Row.Cells.Count;
+                    i++
+                )
                 {
                     e.Row.Cells[i].Text =
                         Server.HtmlDecode(
