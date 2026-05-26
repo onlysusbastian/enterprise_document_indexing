@@ -39,12 +39,6 @@
             display: block;
         }
 
-        .status-label {
-            display: block;
-            margin-bottom: 15px;
-            font-size: 0.95rem;
-        }
-
         .results-wrapper {
             overflow-x: auto;
             max-width: 100%;
@@ -82,24 +76,6 @@
             min-width: 140px;
         }
 
-        .grid-table tr:nth-child(even) td {
-            background-color: #f8fafc;
-        }
-
-        .grid-table tr:hover td {
-            background-color: #f1f5f9;
-        }
-
-        .search-panel {
-            display: flex;
-            gap: 15px;
-            align-items: end;
-        }
-
-        .search-box {
-            flex: 1;
-        }
-
         .layout-wrapper {
             display: flex;
             gap: 20px;
@@ -107,24 +83,19 @@
         }
 
         .filter-sidebar {
-            width: 260px;
+            width: 300px;
             background: white;
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            position: sticky;
-            top: 20px;
         }
 
-        .filter-sidebar h5 {
-            font-size: 1rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            color: #1e293b;
+        .main-results {
+            flex: 1;
         }
 
         .checkbox-list {
-            max-height: 600px;
+            max-height: 500px;
             overflow-y: auto;
             border: 1px solid #e2e8f0;
             padding: 10px;
@@ -136,21 +107,75 @@
         }
 
         .checkbox-list label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-            color: #334155;
+            display: inline-block;
+            margin-bottom: 6px;
         }
 
-        .main-results {
-            flex: 1;
+        .highlight-column {
+            background-color: #ffedd5 !important;
+            color: #9a3412 !important;
+            font-weight: bold;
+        }
+
+        .filter-search-wrapper {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+            margin-bottom: 15px;
         }
 
     </style>
 
+    <script type="text/javascript">
+
+function filterCheckboxes() {
+
+    var input =
+        document.getElementById("filterSearch");
+
+    if (!input)
+        return;
+
+    var filter =
+        input.value.toLowerCase();
+
+    var checkboxList =
+        document.getElementById("<%= cblColumns.ClientID %>");
+
+            if (!checkboxList)
+                return;
+
+            var labels =
+                checkboxList.getElementsByTagName("label");
+
+            for (var i = 0; i < labels.length; i++) {
+
+                var label =
+                    labels[i];
+
+                var text =
+                    (label.innerText || label.textContent)
+                        .toLowerCase();
+
+                var parent =
+                    label.parentNode;
+
+                if (text.indexOf(filter) > -1) {
+
+                    parent.style.display = "";
+                }
+                else {
+
+                    parent.style.display = "none";
+                }
+            }
+        }
+
+    </script>
+
     <div class="container-fluid mt-4">
 
-        <!-- Search Panel -->
+        <!-- MAIN SEARCH -->
 
         <div class="card-box">
 
@@ -158,23 +183,45 @@
                 Enterprise Metadata Search Engine
             </div>
 
-            <div class="search-panel">
+            <div class="row">
 
-                <div class="search-box">
+                <div class="col-md-8">
 
                     <span class="filter-label">
-                        Search Across File Names, Paths & Metadata
+                        Search Keywords (Maximum 3)
                     </span>
 
                     <asp:TextBox ID="txtSearch"
                         runat="server"
                         CssClass="form-control"
-                        placeholder="Example: finance, employee, rack, Assam, project...">
+                        placeholder="Example: finance assam vendor">
                     </asp:TextBox>
 
                 </div>
 
-                <div style="width: 180px;">
+                <div class="col-md-2">
+
+                    <span class="filter-label">
+                        Search Mode
+                    </span>
+
+                    <asp:RadioButtonList ID="rblSearchMode"
+                        runat="server">
+
+                        <asp:ListItem Text="Any One Matching"
+                            Value="OR"
+                            Selected="True">
+                        </asp:ListItem>
+
+                        <asp:ListItem Text="All Matching"
+                            Value="AND">
+                        </asp:ListItem>
+
+                    </asp:RadioButtonList>
+
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
 
                     <asp:Button ID="btnSearch"
                         runat="server"
@@ -188,15 +235,34 @@
 
         </div>
 
-        <!-- Layout -->
+        <!-- MAIN LAYOUT -->
 
         <div class="layout-wrapper">
 
-            <!-- Sidebar Filters -->
+            <!-- FILTER SIDEBAR -->
 
             <div class="filter-sidebar">
 
                 <h5>Visible Metadata Columns</h5>
+
+                <!-- FILTER SEARCH -->
+
+                <div class="filter-search-wrapper">
+
+                    <input type="text"
+                        id="filterSearch"
+                        class="form-control"
+                        placeholder="Search filters..." />
+
+                    <button type="button"
+                        class="btn btn-dark"
+                        onclick="filterCheckboxes()">
+                        Go
+                    </button>
+
+                </div>
+
+                <!-- CHECKBOX LIST -->
 
                 <asp:CheckBoxList ID="cblColumns"
                     runat="server"
@@ -205,15 +271,37 @@
 
                 <br />
 
-                <asp:Button ID="btnApplyColumns"
-                    runat="server"
-                    Text="Apply Column Filters"
-                    CssClass="btn btn-primary w-100"
-                    OnClick="btnApplyColumns_Click" />
+                <!-- FILTER BUTTONS -->
+
+                <div class="d-grid gap-2">
+
+                    <asp:Button ID="btnSelectAll"
+                        runat="server"
+                        Text="Select All"
+                        CssClass="btn btn-success"
+                        OnClick="btnSelectAll_Click" />
+
+                    <br />
+
+                    <asp:Button ID="btnClearAll"
+                        runat="server"
+                        Text="Clear All"
+                        CssClass="btn btn-secondary"
+                        OnClick="btnClearAll_Click" />
+
+                    <br />
+
+                    <asp:Button ID="btnApplyColumns"
+                        runat="server"
+                        Text="Apply Column Filters"
+                        CssClass="btn btn-primary"
+                        OnClick="btnApplyColumns_Click" />
+
+                </div>
 
             </div>
 
-            <!-- Results -->
+            <!-- RESULTS -->
 
             <div class="main-results">
 
@@ -221,10 +309,12 @@
 
                     <asp:Label ID="lblStatus"
                         runat="server"
-                        CssClass="status-label"
                         ForeColor="Green"
                         Font-Bold="true">
                     </asp:Label>
+
+                    <br />
+                    <br />
 
                     <div class="results-wrapper">
 
@@ -234,9 +324,7 @@
                             AutoGenerateColumns="True"
                             GridLines="Both"
                             BorderStyle="None"
-                            BorderWidth="0"
-                            HeaderStyle-Wrap="false"
-                            RowStyle-Wrap="true">
+                            BorderWidth="0">
 
                         </asp:GridView>
 
