@@ -78,6 +78,24 @@ namespace ongc_webapp
         protected global::System.Web.UI.WebControls.Button btnApplyColumns;
 
         /// <summary>
+        /// phDynamicFilters control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.PlaceHolder phDynamicFilters;
+
+        /// <summary>
+        /// btnApplyFilters control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnApplyFilters;
+
+        /// <summary>
         /// lblStatus control.
         /// </summary>
         /// <remarks>

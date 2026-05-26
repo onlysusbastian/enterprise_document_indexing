@@ -6,8 +6,8 @@ using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Npgsql;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace ongc_webapp
 {
@@ -40,6 +40,11 @@ namespace ongc_webapp
             BindDynamicVaultData();
         }
 
+        protected void btnApplyFilters_Click(object sender, EventArgs e)
+        {
+            BindDynamicVaultData();
+        }
+
         protected void btnApplyColumns_Click(object sender, EventArgs e)
         {
             BindDynamicVaultData();
@@ -51,8 +56,6 @@ namespace ongc_webapp
             {
                 item.Selected = true;
             }
-
-            BindDynamicVaultData();
         }
 
         protected void btnClearAll_Click(object sender, EventArgs e)
@@ -61,8 +64,168 @@ namespace ongc_webapp
             {
                 item.Selected = false;
             }
+        }
 
-            BindDynamicVaultData();
+        private void GenerateDynamicFilters(
+            HashSet<string> availableColumns)
+        {
+            phDynamicFilters.Controls.Clear();
+
+            foreach (string column in
+                availableColumns.OrderBy(c => c))
+            {
+                Panel panel = new Panel();
+                panel.CssClass = "filter-row";
+
+                CheckBox cb = new CheckBox();
+
+                cb.ID = "cb_" + column;
+
+                // persist checked state
+
+                bool isChecked =
+                    Request.Form[cb.UniqueID] == "on";
+
+                cb.Checked = isChecked;
+
+                Literal lbl = new Literal();
+
+                lbl.Text =
+                    "<span class='filter-column-name'>" +
+                    column +
+                    "</span>";
+
+                Panel textboxPanel = new Panel();
+
+                string panelId =
+                    "box_" +
+                    column.Replace(" ", "_");
+
+                textboxPanel.Attributes["id"] =
+                    panelId;
+
+                bool shouldShow =
+                    Request.Form[cb.UniqueID] == "on";
+
+                textboxPanel.Style["display"] =
+                    shouldShow
+                    ? "block"
+                    : "none";
+
+                textboxPanel.CssClass =
+                    "filter-input-box";
+
+                cb.InputAttributes.Add(
+                    "onclick",
+                    "toggleFilterTextbox('" +
+                    panelId +
+                    "')");
+
+                TextBox txt = new TextBox();
+
+                txt.ID = "txt_" + column;
+
+                // persist textbox value
+
+                string textboxValue =
+                    Request.Form[txt.UniqueID];
+
+                if (!string.IsNullOrWhiteSpace(textboxValue))
+                {
+                    txt.Text = textboxValue;
+                }
+
+                txt.CssClass =
+                    "form-control";
+
+                txt.Attributes["placeholder"] =
+                    "Filter value...";
+
+                textboxPanel.Controls.Add(txt);
+
+                panel.Controls.Add(cb);
+                panel.Controls.Add(lbl);
+                panel.Controls.Add(textboxPanel);
+
+                phDynamicFilters.Controls.Add(panel);
+
+                if (cblColumns.Items.FindByValue(column)
+                    == null)
+                {
+                    cblColumns.Items.Add(
+                        new ListItem(column, column));
+                }
+            }
+        }
+
+        private HashSet<string> GetFilteredMetadataColumns(
+        List<Dictionary<string, string>> allRows)
+        {
+            HashSet<string> columns =
+                new HashSet<string>();
+
+            // visible columns from old filter
+
+            HashSet<string> selectedColumns =
+                new HashSet<string>();
+
+            bool anySelected = false;
+
+            foreach (ListItem item in cblColumns.Items)
+            {
+                if (item.Selected)
+                {
+                    anySelected = true;
+                    selectedColumns.Add(item.Value);
+                }
+            }
+
+            foreach (var row in allRows)
+            {
+                foreach (var kv in row)
+                {
+                    string key = kv.Key;
+
+                    string value =
+                        kv.Value != null
+                        ? kv.Value.ToString()
+                        : "";
+
+                    // skip system columns
+
+                    if (
+                        key == "id" ||
+                        key == "source_excel_file" ||
+                        key == "file_name" ||
+                        key == "file_path"
+                    )
+                    {
+                        continue;
+                    }
+
+                    // skip empty values
+
+                    if (string.IsNullOrWhiteSpace(value) ||
+                        value == "NULL")
+                    {
+                        continue;
+                    }
+
+                    // apply old column filter
+
+                    if (anySelected)
+                    {
+                        if (!selectedColumns.Contains(key))
+                        {
+                            continue;
+                        }
+                    }
+
+                    columns.Add(key);
+                }
+            }
+
+            return columns;
         }
 
         private void BindDynamicVaultData()
@@ -82,20 +245,6 @@ namespace ongc_webapp
             string searchMode =
                 rblSearchMode.SelectedValue;
 
-            List<string> searchableMetadataColumns =
-                new List<string>();
-
-            bool anyFilterSelected = false;
-
-            foreach (ListItem item in cblColumns.Items)
-            {
-                if (item.Selected)
-                {
-                    anyFilterSelected = true;
-                    searchableMetadataColumns.Add(item.Value);
-                }
-            }
-
             DataTable finalTable =
                 new DataTable();
 
@@ -110,12 +259,6 @@ namespace ongc_webapp
             HashSet<string> metadataColumns =
                 new HashSet<string>();
 
-            Dictionary<string, int> columnMatchCount =
-                new Dictionary<string, int>();
-
-            HashSet<string> matchedColumns =
-                new HashSet<string>();
-
             string query = @"
                 SELECT
                     id,
@@ -125,47 +268,67 @@ namespace ongc_webapp
                     dynamic_metadata
                 FROM indexed_documents";
 
-            List<string> keywordConditions =
+            List<string> whereConditions =
                 new List<string>();
+
+            // KEYWORD SEARCH
 
             if (keywords.Count > 0)
             {
+                List<string> keywordConditions =
+                    new List<string>();
+
                 for (int i = 0; i < keywords.Count; i++)
                 {
-                    List<string> fieldConditions =
-                        new List<string>();
-
-                    fieldConditions.Add(
-                        $"file_name ILIKE @kw{i}");
-
-                    fieldConditions.Add(
-                        $"source_excel_file ILIKE @kw{i}");
-
-                    if (!anyFilterSelected)
-                    {
-                        fieldConditions.Add(
-                            $"dynamic_metadata::text ILIKE @kw{i}");
-                    }
-                    else
-                    {
-                        foreach (string column in searchableMetadataColumns)
-                        {
-                            fieldConditions.Add(
-                                $"dynamic_metadata->>'{column}' ILIKE @kw{i}");
-                        }
-                    }
-
-                    keywordConditions.Add(
-                        "(" +
-                        string.Join(" OR ", fieldConditions) +
-                        ")");
+                    keywordConditions.Add($@"
+                    (
+                        file_name ILIKE @kw{i}
+                        OR source_excel_file ILIKE @kw{i}
+                        OR dynamic_metadata::text ILIKE @kw{i}
+                    )");
                 }
 
+                whereConditions.Add(
+                    "(" +
+                    string.Join(
+                        $" {searchMode} ",
+                        keywordConditions) +
+                    ")");
+            }
+
+            // METADATA FILTERS
+
+            foreach (string key in Request.Form.AllKeys)
+            {
+                if (key != null &&
+                    key.Contains("txt_"))
+                {
+                    string value =
+                        Request.Form[key];
+
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        string column =
+                            key.Substring(
+                                key.IndexOf("txt_") + 4);
+
+                        string param =
+                            "@filter_" +
+                            column.Replace(" ", "_");
+
+                        whereConditions.Add(
+                            $"dynamic_metadata->>'{column}' ILIKE {param}");
+                    }
+                }
+            }
+
+            if (whereConditions.Count > 0)
+            {
                 query +=
                     " WHERE " +
                     string.Join(
-                        $" {searchMode} ",
-                        keywordConditions);
+                        " AND ",
+                        whereConditions);
             }
 
             query +=
@@ -179,11 +342,37 @@ namespace ongc_webapp
                 using (NpgsqlCommand cmd =
                     new NpgsqlCommand(query, conn))
                 {
+                    // KEYWORDS
+
                     for (int i = 0; i < keywords.Count; i++)
                     {
                         cmd.Parameters.AddWithValue(
                             $"@kw{i}",
                             "%" + keywords[i] + "%");
+                    }
+
+                    // FILTER PARAMETERS
+
+                    foreach (string key in Request.Form.AllKeys)
+                    {
+                        if (key != null &&
+                            key.Contains("txt_"))
+                        {
+                            string value =
+                                Request.Form[key];
+
+                            if (!string.IsNullOrWhiteSpace(value))
+                            {
+                                string column =
+                                    key.Substring(
+                                        key.IndexOf("txt_") + 4);
+
+                                cmd.Parameters.AddWithValue(
+                                    "@filter_" +
+                                    column.Replace(" ", "_"),
+                                    "%" + value.Trim() + "%");
+                            }
+                        }
                     }
 
                     using (NpgsqlDataReader reader =
@@ -203,33 +392,30 @@ namespace ongc_webapp
                             rowMap["file_name"] =
                                 reader["file_name"].ToString();
 
-                            // CLICKABLE FILE PATH
-
                             string originalPath =
                                 reader["file_path"].ToString();
 
                             string encodedPath =
                                 Server.UrlEncode(originalPath);
 
-                            string clickablePath =
+                            rowMap["file_path"] =
                                 "<a target='_blank' " +
-                                "style='color:#2563eb;text-decoration:underline;font-weight:500;' " +
+                                "style='color:#2563eb;text-decoration:underline;' " +
                                 "href='OpenFolder.aspx?path=" +
                                 encodedPath +
                                 "'>" +
                                 originalPath +
                                 "</a>";
 
-                            rowMap["file_path"] =
-                                clickablePath;
-
                             string metadataJson =
-                                reader["dynamic_metadata"].ToString();
+                                reader["dynamic_metadata"]
+                                .ToString();
 
                             if (!string.IsNullOrWhiteSpace(metadataJson))
                             {
                                 JObject metadata =
-                                    JsonConvert.DeserializeObject<JObject>(
+                                    JsonConvert
+                                    .DeserializeObject<JObject>(
                                         metadataJson);
 
                                 foreach (var item in metadata)
@@ -240,30 +426,11 @@ namespace ongc_webapp
                                     string value =
                                         item.Value != null
                                         ? item.Value.ToString()
-                                        : "";
+                                        : "NULL";
 
                                     rowMap[key] = value;
 
                                     metadataColumns.Add(key);
-
-                                    foreach (string kw in keywords)
-                                    {
-                                        if (value
-                                            .ToLower()
-                                            .Contains(
-                                                kw.ToLower()))
-                                        {
-                                            matchedColumns.Add(key);
-
-                                            if (!columnMatchCount
-                                                .ContainsKey(key))
-                                            {
-                                                columnMatchCount[key] = 0;
-                                            }
-
-                                            columnMatchCount[key]++;
-                                        }
-                                    }
                                 }
                             }
 
@@ -273,47 +440,29 @@ namespace ongc_webapp
                 }
             }
 
-            foreach (string column in metadataColumns
-                .OrderByDescending(c =>
-                    columnMatchCount.ContainsKey(c)
-                    ? columnMatchCount[c]
-                    : 0)
-                .ThenBy(c => c))
-            {
-                if (cblColumns.Items.FindByValue(column) == null)
-                {
-                    ListItem item =
-                        new ListItem(column, column);
+            // FILTERS BASED ON CURRENT RESULTS
 
-                    item.Selected = false;
+            HashSet<string> filteredColumns =
+                GetFilteredMetadataColumns(allRows);
 
-                    cblColumns.Items.Add(item);
-                }
-            }
+            GenerateDynamicFilters(filteredColumns);
 
-            bool anyDisplayFilterSelected = false;
+            // COLUMN FILTERS
+
+            bool anyColumnsSelected = false;
 
             foreach (ListItem item in cblColumns.Items)
             {
                 if (item.Selected)
                 {
-                    anyDisplayFilterSelected = true;
+                    anyColumnsSelected = true;
                     break;
                 }
             }
 
-            List<string> orderedColumns =
-                metadataColumns
-                .OrderByDescending(c =>
-                    columnMatchCount.ContainsKey(c)
-                    ? columnMatchCount[c]
-                    : 0)
-                .ThenBy(c => c)
-                .ToList();
-
-            if (!anyDisplayFilterSelected)
+            if (!anyColumnsSelected)
             {
-                foreach (string column in orderedColumns)
+                foreach (string column in filteredColumns)
                 {
                     if (!finalTable.Columns.Contains(column))
                     {
@@ -327,9 +476,12 @@ namespace ongc_webapp
                 {
                     if (item.Selected)
                     {
-                        if (!finalTable.Columns.Contains(item.Value))
+                        if (filteredColumns.Contains(item.Value))
                         {
-                            finalTable.Columns.Add(item.Value);
+                            if (!finalTable.Columns.Contains(item.Value))
+                            {
+                                finalTable.Columns.Add(item.Value);
+                            }
                         }
                     }
                 }
@@ -356,35 +508,24 @@ namespace ongc_webapp
                 finalTable.Rows.Add(row);
             }
 
-            gvDocuments.AutoGenerateColumns = true;
-
             gvDocuments.DataSource =
                 finalTable;
 
             gvDocuments.DataBind();
 
-            if (gvDocuments.HeaderRow != null)
-            {
-                for (int i = 0;
-                    i < gvDocuments.HeaderRow.Cells.Count;
-                    i++)
-                {
-                    string headerText =
-                        gvDocuments.HeaderRow.Cells[i].Text;
-
-                    if (matchedColumns.Contains(headerText))
-                    {
-                        gvDocuments.HeaderRow
-                            .Cells[i]
-                            .CssClass =
-                            "highlight-column";
-                    }
-                }
-            }
-
             lblStatus.Text =
                 finalTable.Rows.Count +
                 " result(s) found.";
+        }
+
+        protected void gvDocuments_PageIndexChanging(
+        object sender,
+        GridViewPageEventArgs e)
+        {
+            gvDocuments.PageIndex =
+                e.NewPageIndex;
+
+            BindDynamicVaultData();
         }
 
         protected void gvDocuments_RowDataBound(
