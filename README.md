@@ -22,3 +22,7 @@ ON indexed_documents(file_name);
 
 CREATE INDEX idx_indexed_documents_file_path
 ON indexed_documents(file_path);
+
+
+ALTER TABLE indexed_documents
+ADD COLUMN source_excel_file TEXT;
