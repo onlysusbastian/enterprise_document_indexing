@@ -116,12 +116,7 @@ namespace ongc_webapp
             BindDynamicVaultData();
         }
 
-        protected void gvDocuments_PageIndexChanging(
-            object sender, GridViewPageEventArgs e)
-        {
-            gvDocuments.PageIndex = e.NewPageIndex;
-            BindDynamicVaultData();
-        }
+        
 
         // ════════════════════════════════════════════════════════
         //  SECURITY HELPERS
@@ -413,11 +408,11 @@ namespace ongc_webapp
         // ════════════════════════════════════════════════════════
         private void BindDynamicVaultData()
         {
-            
+            int totalResults = 0;
 
 
             // If the user has a policy but zero datasets, return early
-           
+
 
             // ── Keyword search setup ───────────────────────────
             string rawSearch = txtSearch.Text.Trim();
@@ -517,12 +512,19 @@ namespace ongc_webapp
 
             if (whereConditions.Count > 0)
                 query += " AND " + string.Join(" AND ", whereConditions);
+                
+                string countQuery =
+                @"SELECT COUNT(*)
+                  FROM indexed_documents
+                  WHERE 1=1";
 
-            query += " ORDER BY uploaded_at DESC LIMIT 500";
+                query += " ORDER BY uploaded_at DESC LIMIT 500";
 
             // ── Execute query ──────────────────────────────────
             List<Dictionary<string, string>> allRows =
                 new List<Dictionary<string, string>>();
+
+            
 
             try
             {
@@ -530,6 +532,41 @@ namespace ongc_webapp
                     new NpgsqlConnection(connString))
                 {
                     conn.Open();
+
+                    totalResults = 0;
+
+                    if (whereConditions.Count > 0)
+                    {
+                        countQuery +=
+                            " AND " +
+                            string.Join(" AND ", whereConditions);
+                    }
+
+                    using (NpgsqlCommand countCmd =
+                        new NpgsqlCommand(countQuery, conn))
+                    {
+                        for (int i = 0;
+                             i < allowedDatasets.Count;
+                             i++)
+                        {
+                            countCmd.Parameters.AddWithValue(
+                                "dataset" + i,
+                                allowedDatasets[i]);
+                        }
+
+                        for (int i = 0;
+                             i < keywords.Count;
+                             i++)
+                        {
+                            countCmd.Parameters.AddWithValue(
+                                "kw" + i,
+                                "%" + keywords[i] + "%");
+                        }
+
+                        totalResults =
+                            Convert.ToInt32(
+                                countCmd.ExecuteScalar());
+                    }
 
                     using (NpgsqlCommand cmd =
                         new NpgsqlCommand(query, conn))
@@ -812,7 +849,7 @@ namespace ongc_webapp
             gvDocuments.DataBind();
 
             lblStatus.Text =
-                totalRows + " result(s) found.";
+                totalResults + " result(s) found.";
 
             lblStatus.ForeColor =
                 System.Drawing.Color.FromArgb(0x18, 0x80, 0x38);

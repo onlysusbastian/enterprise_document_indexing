@@ -822,13 +822,7 @@ window.onload = function () {
                         GridLines="Both"
                         BorderStyle="None"
                         BorderWidth="0"
-                        EnableViewState="false"
-                        AllowPaging="false"
-                        PageSize="20"
-                        OnPageIndexChanging="gvDocuments_PageIndexChanging">
-
-                       
-
+                        EnableViewState="false">
                     </asp:GridView>
 
                 </div>
