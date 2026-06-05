@@ -50,16 +50,35 @@ namespace ongc_webapp
         {
             base.OnInit(e);
 
-            // Guard: redirect to login if no session
-            if (Session["UserID"] == null) return;
+            if (Session["UserID"] == null)
+                return;
 
-            // Rebuild filter controls early (needed for PostBack round-trips)
             RestoreDynamicFilters();
+
+            BindDatasetFilter();
         }
 
         // ════════════════════════════════════════════════════════
         //  PAGE LOAD
         // ════════════════════════════════════════════════════════
+
+        private List<string> GetSelectedDatasets()
+        {
+            List<string> datasets =
+                new List<string>();
+
+            foreach (ListItem item in cblDatasets.Items)
+            {
+                if (item.Selected)
+                {
+                    datasets.Add(item.Value);
+                }
+            }
+
+            return datasets;
+        }
+
+
         protected void Page_Load(object sender, EventArgs e)
         {
             if (Session["UserID"] == null)
@@ -73,6 +92,7 @@ namespace ongc_webapp
 
             if (!IsPostBack)
             {
+                BindDatasetFilter();
                 BindDynamicVaultData();
             }
         }
@@ -113,7 +133,7 @@ namespace ongc_webapp
         /// if your login code stores the CPF there instead.
         /// Adjust the key to match your Login.aspx.cs code.
         /// </summary>
-       
+
         /// <summary>
         /// Loads the list of datasets (source_excel_file values) the
         /// current user is allowed to query.
@@ -121,7 +141,7 @@ namespace ongc_webapp
         ///
         /// DB table: user_dataset_access
         /// </summary>
-        
+
 
         /// <summary>
         /// Returns the set of metadata column names the current user is
@@ -131,45 +151,56 @@ namespace ongc_webapp
         /// </summary>
         private HashSet<string> GetAllowedMetadataColumns()
         {
-           
-
             try
             {
+                int userId = GetCurrentUserId();
+
+                HashSet<string> cols =
+                    new HashSet<string>(
+                        StringComparer.OrdinalIgnoreCase);
+
                 using (NpgsqlConnection conn =
                     new NpgsqlConnection(connString))
                 {
                     conn.Open();
+
                     string query =
-                        "SELECT visible_columns " +
-                        "FROM global_metadata_policy " +
-                        "WHERE id = 1";
+                        @"SELECT metadata_name
+                  FROM user_metadata_access
+                  WHERE userid = @userid";
 
                     using (NpgsqlCommand cmd =
                         new NpgsqlCommand(query, conn))
                     {
-                        
-                        object result = cmd.ExecuteScalar();
+                        cmd.Parameters.AddWithValue(
+                            "userid",
+                            userId);
 
-                        if (result == null || result == DBNull.Value)
-                            return null; // no policy row → unrestricted
-
-                        string json = result.ToString();
-                        if (string.IsNullOrWhiteSpace(json))
-                            return null; // null stored → unrestricted
-
-                        List<string> cols =
-                            JsonConvert.DeserializeObject<List<string>>(json);
-
-                        return new HashSet<string>(cols,
-                            StringComparer.OrdinalIgnoreCase);
+                        using (NpgsqlDataReader reader =
+                            cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                cols.Add(
+                                    reader["metadata_name"]
+                                        .ToString());
+                            }
+                        }
                     }
                 }
+
+                if (cols.Count == 0)
+                    return new HashSet<string>();
+
+                return cols;
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(
-                    "GetAllowedMetadataColumns Error: " + ex.Message);
-                return null;
+                    "GetAllowedMetadataColumns Error: " +
+                    ex.Message);
+
+                return new HashSet<string>();
             }
         }
 
@@ -228,9 +259,8 @@ namespace ongc_webapp
             }
 
             // ── Filter keys against the user's policy ──────────
-            HashSet<string> visibleKeys = (allowedCols == null)
-                ? allKeys
-                : new HashSet<string>(
+            HashSet<string> visibleKeys =
+                new HashSet<string>(
                     allKeys.Where(k =>
                         allowedCols.Contains(k)),
                     StringComparer.OrdinalIgnoreCase);
@@ -286,11 +316,7 @@ namespace ongc_webapp
                 string panelId = "box_" + column.Replace(" ", "_");
                 textboxPanel.Attributes["id"] = panelId;
                 textboxPanel.CssClass = "filter-input-box";
-                textboxPanel.Style["display"] = isChecked ? "block" : "none";
-
-                cb.InputAttributes.Add(
-                    "onclick",
-                    "toggleFilterTextbox('" + panelId + "')");
+                textboxPanel.Style["display"] = "block";
 
                 TextBox txt = new TextBox();
                 txt.ID = "txt_" + column;
@@ -416,11 +442,61 @@ namespace ongc_webapp
                 WHERE 1=1";
 
             List<string> whereConditions = new List<string>();
+            List<string> allowedDatasets =
+            GetAllowedDatasets();
+
+            List<string> selectedDatasets =
+            GetSelectedDatasets();
+
+            if (selectedDatasets.Count > 0)
+            {
+                allowedDatasets =
+                    allowedDatasets
+                    .Where(d =>
+                        selectedDatasets.Contains(d))
+                    .ToList();
+            }
+
+            if (Session["Role"] == null ||
+            Session["Role"].ToString().ToUpper() != "ADMIN")
+            {
+                if (allowedDatasets.Count == 0)
+                {
+                    gvDocuments.DataSource = null;
+                    gvDocuments.DataBind();
+
+                    lblStatus.Text =
+                        "No datasets have been assigned.";
+
+                    return;
+                }
+            }
+
+            if (allowedDatasets.Count > 0)
+            {
+                List<string> datasetConditions =
+                    new List<string>();
+
+                for (int i = 0;
+                     i < allowedDatasets.Count;
+                     i++)
+                {
+                    datasetConditions.Add(
+                        "dataset_name = @dataset" + i);
+                }
+
+                whereConditions.Add(
+                    "(" +
+                    string.Join(
+                        " OR ",
+                        datasetConditions) +
+                    ")");
+            }
 
             // ── SECURITY: dataset restriction ─────────────────
             // Only add the clause when a policy exists;
             // if allowedDatasets is null the user sees everything.
-            
+
 
             // ── Keyword search conditions ──────────────────────
             if (keywords.Count > 0)
@@ -459,12 +535,24 @@ namespace ongc_webapp
                         new NpgsqlCommand(query, conn))
                     {
                         // Bind dataset security parameters
-                        
+
+                        for (int i = 0;
+                           i < allowedDatasets.Count;
+                           i++)
+                        {
+                            cmd.Parameters.AddWithValue(
+                                "dataset" + i,
+                                allowedDatasets[i]);
+                        }
+
 
                         // Bind keyword parameters
                         for (int i = 0; i < keywords.Count; i++)
+                        {
                             cmd.Parameters.AddWithValue(
-                                "@kw" + i, "%" + keywords[i] + "%");
+                                "kw" + i,
+                                "%" + keywords[i] + "%");
+                        }
 
                         using (NpgsqlDataReader reader = cmd.ExecuteReader())
                         {
@@ -687,11 +775,176 @@ namespace ongc_webapp
             }
 
             // ── Bind GridView ──────────────────────────────────
-            gvDocuments.DataSource = finalTable;
+            const int PageSize = 20;
+
+            int totalRows = finalTable.Rows.Count;
+
+            int totalPages =
+                (int)Math.Ceiling(
+                    (double)totalRows / PageSize);
+
+            if (totalPages == 0)
+                totalPages = 1;
+
+            if (CurrentPage > totalPages)
+                CurrentPage = totalPages;
+
+            lblPageInfo.Text =
+                "Page " + CurrentPage +
+                " of " + totalPages;
+
+            DataTable pageTable;
+
+            if (finalTable.Rows.Count > 0)
+            {
+                pageTable =
+                    finalTable.AsEnumerable()
+                              .Skip((CurrentPage - 1) * PageSize)
+                              .Take(PageSize)
+                              .CopyToDataTable();
+            }
+            else
+            {
+                pageTable = finalTable.Clone();
+            }
+
+            gvDocuments.DataSource = pageTable;
             gvDocuments.DataBind();
 
-            lblStatus.Text = finalTable.Rows.Count + " result(s) found.";
-            lblStatus.ForeColor = System.Drawing.Color.FromArgb(0x18, 0x80, 0x38);
+            lblStatus.Text =
+                totalRows + " result(s) found.";
+
+            lblStatus.ForeColor =
+                System.Drawing.Color.FromArgb(0x18, 0x80, 0x38);
+        }
+
+        private int GetCurrentUserId()
+        {
+            using (NpgsqlConnection conn =
+                new NpgsqlConnection(connString))
+            {
+                conn.Open();
+
+                using (NpgsqlCommand cmd =
+                    new NpgsqlCommand(
+                        @"SELECT id
+                  FROM users
+                  WHERE username = @username",
+                        conn))
+                {
+                    cmd.Parameters.AddWithValue(
+                        "username",
+                        Session["UserID"].ToString());
+
+                    object result =
+                        cmd.ExecuteScalar();
+
+                    return Convert.ToInt32(result);
+                }
+            }
+        }
+
+        private void BindDatasetFilter()
+        {
+            List<string> datasets =
+                GetAllowedDatasets();
+
+            cblDatasets.Items.Clear();
+
+            foreach (string dataset in datasets)
+            {
+                ListItem item =
+                    new ListItem(dataset, dataset);
+
+                if (!IsPostBack)
+                {
+                    item.Selected = true;
+                }
+
+                cblDatasets.Items.Add(item);
+            }
+        }
+
+
+
+        private List<string> GetAllowedDatasets()
+        {
+            try
+            {
+                int userId =
+                    GetCurrentUserId();
+
+                List<string> datasets =
+                    new List<string>();
+
+                using (NpgsqlConnection conn =
+                    new NpgsqlConnection(connString))
+                {
+                    conn.Open();
+
+                    using (NpgsqlCommand cmd =
+                        new NpgsqlCommand(
+                            @"SELECT dataset_name
+                      FROM user_dataset_access
+                      WHERE userid = @userid",
+                            conn))
+                    {
+                        cmd.Parameters.AddWithValue(
+                            "userid",
+                            userId);
+
+                        using (NpgsqlDataReader dr =
+                            cmd.ExecuteReader())
+                        {
+                            while (dr.Read())
+                            {
+                                datasets.Add(
+                                    dr["dataset_name"]
+                                        .ToString());
+                            }
+                        }
+                    }
+                }
+
+                return datasets;
+            }
+            catch
+            {
+                return new List<string>();
+            }
+        }
+
+        private int CurrentPage
+        {
+            get
+            {
+                return ViewState["CurrentPage"] == null
+                    ? 1
+                    : Convert.ToInt32(ViewState["CurrentPage"]);
+            }
+            set
+            {
+                ViewState["CurrentPage"] = value;
+            }
+        }
+
+        protected void btnPrevPage_Click(
+        object sender,
+        EventArgs e)
+        {
+            if (CurrentPage > 1)
+                CurrentPage--;
+
+            BindDynamicVaultData();
+        }
+
+        protected void btnNextPage_Click(
+            object sender,
+            EventArgs e)
+        {
+            CurrentPage++;
+
+            BindDynamicVaultData();
         }
 
         // ════════════════════════════════════════════════════════

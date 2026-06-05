@@ -201,6 +201,7 @@
     <Content Include="Global.asax" />
     <Content Include="Indexing.aspx" />
     <Content Include="Login.aspx" />
+    <Content Include="ManageUserAccess.aspx" />
     <Content Include="ongclogo.png" />
     <Content Include="ongc_refinery 1.jpg" />
     <Content Include="ongc_refinery.jpg" />
@@ -291,6 +292,13 @@
     </Compile>
     <Compile Include="Login.aspx.designer.cs">
       <DependentUpon>Login.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="ManageUserAccess.aspx.cs">
+      <DependentUpon>ManageUserAccess.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="ManageUserAccess.aspx.designer.cs">
+      <DependentUpon>ManageUserAccess.aspx</DependentUpon>
     </Compile>
     <Compile Include="OpenFolder.aspx.cs">
       <DependentUpon>OpenFolder.aspx</DependentUpon>
