@@ -207,6 +207,7 @@
     <Content Include="ongc_refinery.jpg" />
     <Content Include="OpenFolder.aspx" />
     <Content Include="RawFile.aspx" />
+    <Content Include="Register.aspx" />
     <Content Include="rig.jpg" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
@@ -314,6 +315,13 @@
     </Compile>
     <Compile Include="RawFile.aspx.designer.cs">
       <DependentUpon>RawFile.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Register.aspx.cs">
+      <DependentUpon>Register.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Register.aspx.designer.cs">
+      <DependentUpon>Register.aspx</DependentUpon>
     </Compile>
     <Compile Include="Site.master.cs">
       <DependentUpon>Site.master</DependentUpon>
