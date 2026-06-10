@@ -1,4 +1,4 @@
-﻿﻿<%@ Page Title="Login" Language="C#" AutoEventWireup="true" CodeBehind="Login.aspx.cs" Inherits="ongc_webapp.Login" %>
+﻿﻿﻿<%@ Page Title="Login" Language="C#" AutoEventWireup="true" CodeBehind="Login.aspx.cs" Inherits="ongc_webapp.Login" %>
 <!DOCTYPE html>
 <html lang="en">
 <head runat="server">
@@ -445,16 +445,16 @@
 <script>
 // @ts-nocheck
 
-    /* ══════════════════════════════════════════════════════════
-       ROLE TAB  (Employee ↔ Admin)
-    ══════════════════════════════════════════════════════════ */
-    function setRole(role) {
-        var isAdmin = (role === 'ADMIN');
-        document.getElementById('emp-section').style.display = isAdmin ? 'none' : 'block';
-        document.getElementById('adm-section').style.display = isAdmin ? 'block' : 'none';
-        document.getElementById('tabEmployee').classList.toggle('active', !isAdmin);
-        document.getElementById('tabAdmin').classList.toggle('active', isAdmin);
-        var currentRole = role;
+/* ══════════════════════════════════════════════════════════
+   ROLE TAB  (Employee ↔ Admin)
+══════════════════════════════════════════════════════════ */
+function setRole(role) {
+    var isAdmin = (role === 'ADMIN');
+    document.getElementById('emp-section').style.display = isAdmin ? 'none' : 'block';
+    document.getElementById('adm-section').style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('tabEmployee').classList.toggle('active', !isAdmin);
+    document.getElementById('tabAdmin').classList.toggle('active', isAdmin);
+    var currentRole = role;
     hideAlert();
 }
 
@@ -462,22 +462,22 @@
    EMPLOYEE VIEW  (Login / Register / Recovery)
 ══════════════════════════════════════════════════════════ */
 function switchEmployeeView(mode) {
-    show('hdr-login',    mode === 'LOGIN');
+    show('hdr-login', mode === 'LOGIN');
     show('hdr-register', mode === 'REGISTER');
     show('hdr-recovery', mode === 'RECOVERY');
 
-    show('emp-pwd-group',     mode !== 'RECOVERY');
+    show('emp-pwd-group', mode !== 'RECOVERY');
     show('emp-confirm-group', mode === 'REGISTER');
-    show('emp-email-group',   mode !== 'LOGIN');
-    show('emp-dept-group',    mode === 'REGISTER');
-    
+    show('emp-email-group', mode !== 'LOGIN');
+    show('emp-dept-group', mode === 'REGISTER');
+
 
     var back = document.getElementById('backBtn');
     if (back) {
         back.style.display = (mode !== 'LOGIN') ? 'flex' : 'none';
     }
 
-    show('emp-footer-login',    mode === 'LOGIN');
+    show('emp-footer-login', mode === 'LOGIN');
     show('emp-footer-register', mode === 'REGISTER');
     show('emp-footer-recovery', mode === 'RECOVERY');
 
