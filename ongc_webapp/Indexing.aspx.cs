@@ -17,21 +17,23 @@
 //    • user_metadata_policy  – per-user allowed sidebar column names (JSONB array)
 // ============================================================
 
+using DocumentFormat.OpenXml.Office.Word;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Npgsql;
 using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
-using System.Collections.Generic;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using Npgsql;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
 
 namespace ongc_webapp
 {
     public partial class Indexing : System.Web.UI.Page
     {
+        int totalRows = 0;
         // ── Connection string ──────────────────────────────────
         private string connString =
             ConfigurationManager
@@ -170,6 +172,7 @@ namespace ongc_webapp
                 {
                     conn.Open();
 
+
                     string query =
                       @"SELECT TRIM(metadata_name)
                       FROM user_metadata_access
@@ -183,8 +186,7 @@ namespace ongc_webapp
                         return new HashSet<string>();
                     }
 
-                    using (NpgsqlCommand cmd =
-                        new NpgsqlCommand(query, conn))
+                    using (NpgsqlCommand cmd = new NpgsqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue(
                             "userid",
@@ -378,6 +380,28 @@ namespace ongc_webapp
                 WHERE 1=1";
 
             List<string> whereConditions = new List<string>();
+
+            if (keywords.Count > 0)
+            {
+                List<string> kwConditions =
+                    new List<string>();
+
+                for (int i = 0; i < keywords.Count; i++)
+                {
+                    kwConditions.Add(
+                        "(file_name ILIKE @kw" + i +
+                        " OR dynamic_metadata::text ILIKE @kw" + i +
+                        ")");
+                }
+
+                whereConditions.Add(
+                    "(" +
+                    string.Join(
+                        " " + searchMode + " ",
+                        kwConditions) +
+                    ")");
+            }
+
             List<string> allowedDatasets =
             GetAllowedDatasets();
 
@@ -436,21 +460,49 @@ namespace ongc_webapp
 
 
             // ── Keyword search conditions ──────────────────────
-            if (keywords.Count > 0)
+            
+            int metadataIndex = 0;
+
+            foreach (Control ctrl in phDynamicFilters.Controls)
             {
-                List<string> kwConditions = new List<string>();
-                for (int i = 0; i < keywords.Count; i++)
+                Panel panel = ctrl as Panel;
+                if (panel == null) continue;
+
+                TextBox txt = null;
+
+                foreach (Control inner in panel.Controls)
                 {
-                    kwConditions.Add(
-                        "(file_name ILIKE @kw" + i +
-                        " OR dynamic_metadata::text ILIKE @kw" + i + ")");
+                    if (inner is Panel)
+                    {
+                        foreach (Control sub in ((Panel)inner).Controls)
+                        {
+                            if (sub is TextBox)
+                                txt = (TextBox)sub;
+                        }
+                    }
                 }
 
+                if (txt == null)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(txt.Text))
+                    continue;
+
+                string colName =
+                    txt.Attributes["data-column"];
+
+                string param =
+                    "meta" + metadataIndex;
+
                 whereConditions.Add(
-                    "(" +
-                    string.Join(" " + searchMode + " ", kwConditions) +
-                    ")");
+                    "dynamic_metadata->>'" +
+                    colName.Replace("'", "") +
+                    "' ILIKE @" +
+                    param);
+
+                metadataIndex++;
             }
+
 
             if (whereConditions.Count > 0)
                 query += " AND " + string.Join(" AND ", whereConditions);
@@ -467,7 +519,15 @@ namespace ongc_webapp
                             string.Join(" AND ", whereConditions);
                     }
 
-            query += " ORDER BY uploaded_at DESC LIMIT 5000";
+            int pageSize = 20;
+
+            int offset =
+                (CurrentPage - 1) * pageSize;
+
+            query +=
+                " ORDER BY uploaded_at DESC " +
+                " LIMIT @limit " +
+                " OFFSET @offset";
 
             string displayQuery =
             whereConditions.Count > 0
@@ -517,6 +577,7 @@ namespace ongc_webapp
                     displayQuery.Replace(
                         "@kw" + i,
                         "'%" + keywords[i] + "%'");
+
             }
 
             litSqlQuery.Text =
@@ -535,6 +596,61 @@ namespace ongc_webapp
                 {
                     conn.Open();
 
+                    using (NpgsqlCommand countCmd =
+                        new NpgsqlCommand(countQuery, conn))
+                    {
+                        for (int i = 0; i < allowedDatasets.Count; i++)
+                        {
+                            countCmd.Parameters.AddWithValue(
+                                "dataset" + i,
+                                allowedDatasets[i]);
+                        }
+
+                        for (int i = 0; i < keywords.Count; i++)
+                        {
+                            countCmd.Parameters.AddWithValue(
+                                "kw" + i,
+                                "%" + keywords[i] + "%");
+                        }
+
+                        metadataIndex = 0;
+
+                        foreach (Control ctrl in phDynamicFilters.Controls)
+                        {
+                            Panel panel = ctrl as Panel;
+                            if (panel == null)
+                                continue;
+
+                            TextBox txt = null;
+
+                            foreach (Control inner in panel.Controls)
+                            {
+                                if (inner is Panel)
+                                {
+                                    foreach (Control sub in ((Panel)inner).Controls)
+                                    {
+                                        if (sub is TextBox)
+                                            txt = (TextBox)sub;
+                                    }
+                                }
+                            }
+
+                            if (txt == null ||
+                                string.IsNullOrWhiteSpace(txt.Text))
+                                continue;
+
+                            countCmd.Parameters.AddWithValue(
+                                "meta" + metadataIndex,
+                                "%" + txt.Text.Trim() + "%");
+
+                            metadataIndex++;
+                        }
+
+                        totalRows =
+                            Convert.ToInt32(
+                                countCmd.ExecuteScalar());
+                    }
+
                     using (NpgsqlCommand cmd =
                         new NpgsqlCommand(query, conn))
                     {
@@ -544,10 +660,54 @@ namespace ongc_webapp
                            i < allowedDatasets.Count;
                            i++)
                         {
+
+                            metadataIndex = 0;
+
+                            foreach (Control ctrl in phDynamicFilters.Controls)
+                            {
+                                Panel panel = ctrl as Panel;
+                                if (panel == null)
+                                    continue;
+
+                                TextBox txt = null;
+
+                                foreach (Control inner in panel.Controls)
+                                {
+                                    if (inner is Panel)
+                                    {
+                                        foreach (Control sub in ((Panel)inner).Controls)
+                                        {
+                                            if (sub is TextBox)
+                                                txt = (TextBox)sub;
+                                        }
+                                    }
+                                }
+
+                                if (txt == null)
+                                    continue;
+
+                                if (string.IsNullOrWhiteSpace(txt.Text))
+                                    continue;
+
+                                cmd.Parameters.AddWithValue(
+                                    "meta" + metadataIndex,
+                                    "%" + txt.Text.Trim() + "%");
+
+                                metadataIndex++;
+                            }
+
                             cmd.Parameters.AddWithValue(
                                 "dataset" + i,
                                 allowedDatasets[i]);
                         }
+
+                        cmd.Parameters.AddWithValue(
+                            "limit",
+                            pageSize);
+
+                        cmd.Parameters.AddWithValue(
+                            "offset",
+                            offset);
 
 
                         // Bind keyword parameters
@@ -605,6 +765,8 @@ namespace ongc_webapp
                 return;
             }
 
+            metadataIndex = 0;
+
             // ── Auto-detect the best matching column ──────────
             Dictionary<string, int> columnScores =
                 new Dictionary<string, int>();
@@ -658,84 +820,12 @@ namespace ongc_webapp
             }
 
             // ── Show/hide sidebar filter rows ──────────────────
-            
+
 
             // ── Apply metadata text filters ────────────────────
-            List<Dictionary<string, string>> filteredRows =
-                new List<Dictionary<string, string>>();
 
-            foreach (var rowMap in allRows)
-            {
-                bool matches = true;
 
-                foreach (Control ctrl in phDynamicFilters.Controls)
-                {
-                    Panel panel = ctrl as Panel;
-                    if (panel == null) continue;
-                    TextBox txt = null;
-
-                    foreach (Control inner in panel.Controls)
-                    {
-
-                        if (inner is Panel)
-                        {
-                            foreach (Control sub in ((Panel)inner).Controls)
-                                if (sub is TextBox) txt = (TextBox)sub;
-                        }
-                    }
-
-                    if (txt == null)
-                        continue;
-
-                    if (string.IsNullOrWhiteSpace(txt.Text))
-                        continue;
-
-                    string colName = txt.Attributes["data-column"];
-
-                    System.Diagnostics.Debug.WriteLine("FILTER COLUMN = [" + colName + "] VALUE = [" + txt.Text + "]");
-
-                    string actualValue = "";
-
-                    var actualKey =
-                        rowMap.Keys.FirstOrDefault(
-                            k => k.Equals(
-                                colName,
-                                StringComparison.OrdinalIgnoreCase));
-
-                    if (actualKey != null)
-                    {
-                        actualValue =
-                            (rowMap[actualKey] ?? "").Trim();
-                    }
-
-                    string actualLower = actualValue.ToLower();
-                    string filterValue = (txt.Text ?? "").Trim().ToLower();
-
-                    if (filterValue == "!null")
-                    {
-                        if (string.IsNullOrWhiteSpace(actualLower) ||
-                            actualLower == "null")
-                        { matches = false; break; }
-                    }
-                    else if (filterValue == "null")
-                    {
-                        if (!string.IsNullOrWhiteSpace(actualLower) &&
-                            actualLower != "null")
-                        { matches = false; break; }
-                    }
-                    else if (!string.IsNullOrWhiteSpace(filterValue))
-                    {
-                        if (!actualLower.Contains(filterValue))
-                        { matches = false; break; }
-                    }
-                }
-
-                if (matches) filteredRows.Add(rowMap);
-            }
-
-            allRows = filteredRows;
-
-            totalResults = filteredRows.Count;
+            totalResults = allRows.Count;
 
             if (totalResults == 0)
             {
@@ -823,7 +913,7 @@ namespace ongc_webapp
             // ── Bind GridView ──────────────────────────────────
             const int PageSize = 20;
 
-            int totalRows = finalTable.Rows.Count;
+           
 
             int totalPages =
                 (int)Math.Ceiling(
@@ -852,27 +942,12 @@ namespace ongc_webapp
             btnLastPage.Enabled =
                 CurrentPage < totalPages;
 
-            DataTable pageTable;
-
-            if (finalTable.Rows.Count > 0)
-            {
-                pageTable =
-                    finalTable.AsEnumerable()
-                              .Skip((CurrentPage - 1) * PageSize)
-                              .Take(PageSize)
-                              .CopyToDataTable();
-            }
-            else
-            {
-                pageTable = finalTable.Clone();
-            }
-
-            gvDocuments.DataSource = pageTable;
+            gvDocuments.DataSource = finalTable;
             gvDocuments.DataBind();
 
             lblStatus.Text =
-                "Filtered rows = " +
-                filteredRows.Count;
+                "Results found = " +
+                totalRows;
             lblStatus.ForeColor =
                 System.Drawing.Color.FromArgb(0x18, 0x80, 0x38);
         }

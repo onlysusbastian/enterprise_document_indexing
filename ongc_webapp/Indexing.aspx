@@ -518,6 +518,29 @@
             font-size: 13px;
         }
         
+        .suggestion-box {
+            position: absolute;
+            top: 52px;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.12);
+            z-index: 9999;
+            display: none;
+            overflow: hidden;
+        }
+
+        .suggestion-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .suggestion-item:hover {
+            background: #f3f4f6;
+        }
 
     </style>
 
@@ -690,6 +713,90 @@ window.onload = function () {
         }
     }
 };
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const txt =
+            document.getElementById(
+                '<%= txtSearch.ClientID %>');
+
+        const box =
+            document.getElementById(
+                'suggestionBox');
+
+        txt.addEventListener(
+            'keyup',
+            function () {
+
+                let q =
+                    txt.value.trim();
+
+                if (q.length < 2) {
+                    box.style.display =
+                        'none';
+                    return;
+                }
+
+                fetch(
+                    'SearchSuggestions.aspx?q=' +
+                    encodeURIComponent(q))
+                .then(r => r.json())
+                .then(data => {
+
+                    box.innerHTML = '';
+
+                    if (data.length === 0) {
+                        box.style.display =
+                            'none';
+                        return;
+                    }
+
+                    data.forEach(item => {
+
+                        let div =
+                            document.createElement(
+                                'div');
+
+                        div.className =
+                            'suggestion-item';
+
+                        div.innerText =
+                            item;
+
+                        div.onclick =
+                            function () {
+
+                                txt.value =
+                                    item;
+
+                                box.style.display =
+                                    'none';
+                            };
+
+                        box.appendChild(div);
+                    });
+
+                    box.style.display =
+                        'block';
+                });
+            });
+
+        document.addEventListener(
+            'click',
+            function (e) {
+
+                if (!box.contains(e.target)
+                    &&
+                    e.target !== txt)
+                {
+                    box.style.display =
+                        'none';
+                }
+            });
+    });
+
     </script>
 
     <!-- ══════════════════════════════
@@ -704,11 +811,18 @@ window.onload = function () {
         <div class="search-row">
 
             <div class="search-bar-wrap">
-                <asp:TextBox ID="txtSearch"
+
+                <asp:TextBox
+                    ID="txtSearch"
                     runat="server"
                     CssClass="form-control"
                     placeholder="Search documents, metadata…">
                 </asp:TextBox>
+
+                <div id="suggestionBox"
+                     class="suggestion-box">
+                </div>
+
             </div>
 
             <div class="mode-wrap">
