@@ -292,17 +292,6 @@ namespace ongc_webapp
                     Panel panel = new Panel();
                     panel.CssClass = "filter-row";
 
-                    // ── Checkbox ──
-                    CheckBox cb = new CheckBox();
-                    cb.ID = "cb_" + column;
-                    string cbValue = Request.Form.AllKeys
-                     .Where(k => k != null &&
-                            k.EndsWith("$" + cb.ID))
-                     .Select(k => Request.Form[k])
-                     .FirstOrDefault();
-
-                    cb.Checked = cbValue == "on";
-
                     // ── Label literal ──
                     Literal lbl = new Literal();
                     lbl.Text =
@@ -317,23 +306,30 @@ namespace ongc_webapp
                     textboxPanel.CssClass = "filter-input-box";
                     textboxPanel.Style["display"] = "block";
 
+                    string safeColumn =
+                    column.Replace(" ", "_")
+                          .Replace(".", "_")
+                          .Replace("-", "_");
+
                     TextBox txt = new TextBox();
-                    txt.ID = "txt_" + column;
+
+                    txt.ID = "txt_" + safeColumn;
+
+                    System.Diagnostics.Debug.WriteLine("CREATED TEXTBOX: " + txt.ID);
+
+                    
+
                     txt.CssClass = "form-control";
                     txt.Attributes["placeholder"] = "Filter value…";
+                    txt.Attributes["data-column"] = column;
 
                     // Restore textbox value from posted form data
-                    string postedValue = Request.Form.AllKeys
-                    .Where(k => k != null &&
-                           k.EndsWith("$" + txt.ID))
-                    .Select(k => Request.Form[k])
-                    .FirstOrDefault();
-                    if (!string.IsNullOrWhiteSpace(postedValue))
-                        txt.Text = postedValue;
+                    if (Request.Form[txt.UniqueID] != null)
+                    {
+                        txt.Text = Request.Form[txt.UniqueID];
+                    }
 
                     textboxPanel.Controls.Add(txt);
-
-                    panel.Controls.Add(cb);
                     panel.Controls.Add(lbl);
                     panel.Controls.Add(textboxPanel);
 
@@ -471,7 +467,7 @@ namespace ongc_webapp
                             string.Join(" AND ", whereConditions);
                     }
 
-            query += " ORDER BY uploaded_at DESC LIMIT 500";
+            query += " ORDER BY uploaded_at DESC LIMIT 5000";
 
             string displayQuery =
             whereConditions.Count > 0
@@ -482,14 +478,11 @@ namespace ongc_webapp
             {
                 Panel panel = ctrl as Panel;
                 if (panel == null) continue;
-
-                CheckBox cb = null;
                 TextBox txt = null;
 
                 foreach (Control inner in panel.Controls)
                 {
-                    if (inner is CheckBox)
-                        cb = (CheckBox)inner;
+                    
 
                     if (inner is Panel)
                     {
@@ -501,21 +494,12 @@ namespace ongc_webapp
                     }
                 }
 
-                if (cb == null || txt == null)
+                if (txt == null)
                     continue;
 
                 if (string.IsNullOrWhiteSpace(txt.Text))
                     continue;
 
-                string colName =
-                    cb.ID.Replace("cb_", "");
-
-                displayQuery +=
-                    " AND " +
-                    colName +
-                    " LIKE '%" +
-                    txt.Text.Replace("'", "''") +
-                    "%'";
             }
 
 
@@ -688,13 +672,10 @@ namespace ongc_webapp
                 {
                     Panel panel = ctrl as Panel;
                     if (panel == null) continue;
-
-                    CheckBox cb = null;
                     TextBox txt = null;
 
                     foreach (Control inner in panel.Controls)
                     {
-                        if (inner is CheckBox) cb = (CheckBox)inner;
 
                         if (inner is Panel)
                         {
@@ -703,13 +684,13 @@ namespace ongc_webapp
                         }
                     }
 
-                    if (cb == null || txt == null)
+                    if (txt == null)
                         continue;
 
                     if (string.IsNullOrWhiteSpace(txt.Text))
                         continue;
 
-                    string colName = cb.ID.Replace("cb_", "");
+                    string colName = txt.Attributes["data-column"];
 
                     System.Diagnostics.Debug.WriteLine("FILTER COLUMN = [" + colName + "] VALUE = [" + txt.Text + "]");
 
@@ -755,6 +736,25 @@ namespace ongc_webapp
             allRows = filteredRows;
 
             totalResults = filteredRows.Count;
+
+            if (totalResults == 0)
+            {
+                AuditLogger.LogActivity(
+                    Session["UserID"].ToString(),
+                    "ZERO_RESULT_SEARCH",
+                    "No results found",
+                    GetSelectedDataset(),
+                    null,
+                    txtSearch.Text.Trim());
+            }
+
+            AuditLogger.LogActivity(
+                Session["UserID"].ToString(),
+                "SEARCH",
+                "Search executed",
+                GetSelectedDataset(),
+                null,
+                txtSearch.Text.Trim());
 
             // ── Build DataTable for GridView ───────────────────
             DataTable finalTable = new DataTable();

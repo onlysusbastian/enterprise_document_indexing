@@ -28,6 +28,8 @@ namespace ongc_webapp
             }
 
             string filePath = "";
+            string datasetName = "";
+            string fileName = "";
 
             using (
                 NpgsqlConnection conn =
@@ -37,7 +39,10 @@ namespace ongc_webapp
                 conn.Open();
 
                 string query = @"
-                    SELECT file_path
+                    SELECT
+                        file_path,
+                        dataset_name,
+                        file_name
                     FROM indexed_documents
                     WHERE id = @id";
 
@@ -50,13 +55,19 @@ namespace ongc_webapp
                         "@id",
                         Guid.Parse(id));
 
-                    object result =
-                        cmd.ExecuteScalar();
-
-                    if (result != null)
+                    using (NpgsqlDataReader reader = cmd.ExecuteReader())
                     {
-                        filePath =
-                            result.ToString();
+                        if (reader.Read())
+                        {
+                            filePath =
+                                reader["file_path"].ToString();
+
+                            datasetName =
+                                reader["dataset_name"].ToString();
+
+                            fileName =
+                                reader["file_name"].ToString();
+                        }
                     }
                 }
             }
@@ -71,6 +82,17 @@ namespace ongc_webapp
             if (!File.Exists(filePath))
             {
                 return;
+            }
+
+            if (Session["UserID"] != null)
+            {
+                AuditLogger.LogActivity(
+                    Session["UserID"].ToString(),
+                    "DOWNLOAD_DOCUMENT",
+                    "Downloaded document",
+                    datasetName,
+                    fileName,
+                    null);
             }
 
             Response.Clear();

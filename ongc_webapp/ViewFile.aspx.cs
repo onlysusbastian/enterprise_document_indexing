@@ -8,6 +8,7 @@ namespace ongc_webapp
     public partial class ViewFile :
         System.Web.UI.Page
     {
+
         private string connString =
             ConfigurationManager
             .ConnectionStrings["PostgresConn"]
@@ -56,7 +57,10 @@ namespace ongc_webapp
                 conn.Open();
 
                 string query = @"
-                    SELECT file_path
+                    SELECT
+                        file_path,
+                        dataset_name,
+                        file_name
                     FROM indexed_documents
                     WHERE id = @id";
 
@@ -97,6 +101,17 @@ namespace ongc_webapp
 
                 return;
             }
+
+            string fileName =
+            Path.GetFileName(filePath);
+
+            AuditLogger.LogActivity(
+                Session["UserID"].ToString(),
+                "VIEW_DOCUMENT",
+                "Viewed document",
+                null,
+                fileName,
+                null);
 
             string extension =
                 Path.GetExtension(filePath)

@@ -508,21 +508,66 @@
 
         </asp:Panel>
         <asp:Panel
-            ID="pnlActivity"
+    ID="pnlActivity"
+    runat="server"
+    Visible="false">
+
+    <div class="admin-card">
+
+        <h4>User Activity Log</h4>
+
+        <div class="form-row">
+
+            <asp:Button
+                ID="btnRefreshActivity"
+                runat="server"
+                Text="Refresh Logs"
+                CssClass="btn-ongc"
+                OnClick="btnRefreshActivity_Click" />
+
+        </div>
+
+        <br />
+
+        <asp:GridView
+            ID="gvActivityLogs"
             runat="server"
-            Visible="false">
+            CssClass="admin-grid"
+            AutoGenerateColumns="False">
 
-            <div class="admin-card">
+            <Columns>
 
-                <h4>User Activity Log</h4>
+                <asp:BoundField
+                    DataField="created_at"
+                    HeaderText="Time" />
 
-                <p>
-                    Activity logs will appear here.
-                </p>
+                <asp:BoundField
+                    DataField="username"
+                    HeaderText="User" />
 
-            </div>
+                <asp:BoundField
+                    DataField="activity_type"
+                    HeaderText="Activity" />
 
-        </asp:Panel>
+                <asp:BoundField
+                    DataField="dataset_name"
+                    HeaderText="Dataset" />
+
+                <asp:BoundField
+                    DataField="file_name"
+                    HeaderText="File" />
+
+                <asp:BoundField
+                    DataField="search_query"
+                    HeaderText="Search Query" />
+
+            </Columns>
+
+        </asp:GridView>
+
+    </div>
+
+</asp:Panel>
 
         <asp:Panel
             ID="pnlDatasets"

@@ -275,6 +275,14 @@ namespace ongc_webapp
                                     Session["UserID"] =
                                         reader["username"].ToString();
 
+                                    AuditLogger.LogActivity(
+                                        username,
+                                        "LOGIN",
+                                        "User logged in",
+                                        null,
+                                        null,
+                                        null);
+
                                     Session["Username"] =
                                         reader["username"].ToString();
 

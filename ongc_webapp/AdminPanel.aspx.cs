@@ -547,11 +547,19 @@ namespace ongc_webapp
             ShowTab("upload");
         }
 
+        protected void btnRefreshActivity_Click(
+                        object sender,
+                        EventArgs e)
+        {
+            LoadActivityLogs();
+        }
+
         protected void btnTabActivity_Click(
             object sender,
             EventArgs e)
         {
             ShowTab("activity");
+            LoadActivityLogs();
         }
 
         protected void btnTabDatasets_Click(
@@ -559,6 +567,38 @@ namespace ongc_webapp
                         EventArgs e)
         {
             ShowTab("datasets");
+        }
+
+        private void LoadActivityLogs()
+        {
+            using (NpgsqlConnection conn =
+                new NpgsqlConnection(connString))
+            {
+                conn.Open();
+
+                string sql = @"
+            SELECT
+                created_at,
+                username,
+                activity_type,
+                dataset_name,
+                file_name,
+                search_query
+            FROM user_activity_logs
+            ORDER BY created_at DESC
+            LIMIT 500";
+
+                using (NpgsqlDataAdapter da =
+                    new NpgsqlDataAdapter(sql, conn))
+                {
+                    DataTable dt = new DataTable();
+
+                    da.Fill(dt);
+
+                    gvActivityLogs.DataSource = dt;
+                    gvActivityLogs.DataBind();
+                }
+            }
         }
 
         private void BuildDatasetTree()
