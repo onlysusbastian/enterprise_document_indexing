@@ -386,11 +386,30 @@ namespace ongc_webapp
                 List<string> kwConditions =
                     new List<string>();
 
+                HashSet<string> searchableColumns =
+    GetAllowedMetadataColumns();
+
                 for (int i = 0; i < keywords.Count; i++)
                 {
+                    List<string> keywordSearchParts =
+                        new List<string>();
+
+                    keywordSearchParts.Add(
+                        "file_name ILIKE @kw" + i);
+
+                    foreach (string col in searchableColumns)
+                    {
+                        keywordSearchParts.Add(
+                            "dynamic_metadata->>'" +
+                            col.Replace("'", "") +
+                            "' ILIKE @kw" + i);
+                    }
+
                     kwConditions.Add(
-                        "(file_name ILIKE @kw" + i +
-                        " OR dynamic_metadata::text ILIKE @kw" + i +
+                        "(" +
+                        string.Join(
+                            " OR ",
+                            keywordSearchParts) +
                         ")");
                 }
 
