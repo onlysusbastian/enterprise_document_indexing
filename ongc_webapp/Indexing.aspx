@@ -947,7 +947,7 @@ document.addEventListener(
             <div class="metadata-filter-footer">
                 <asp:Button ID="btnApplyFilters"
                     runat="server"
-                    Text="Apply Metadata Filters"
+                    Text="Apply Filters"
                     CssClass="btn-apply-dark"
                     OnClick="btnApplyFilters_Click" />
             </div>

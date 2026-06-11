@@ -1,7 +1,6 @@
 ﻿<%@ Page Title="System Dashboard" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Dashboard.aspx.cs" Inherits="ongc_webapp.Dashboard" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         body { background-color: #f4f6f8; color: #2d3436; font-family: 'Segoe UI', Arial, sans-serif; }
@@ -14,9 +13,6 @@
         .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #636e72; font-weight: 600; margin-bottom: 5px; }
         .stat-value { font-size: 1.75rem; font-weight: 700; color: #2d3436; }
 
-        /* Chart Containers */
-        .chart-card { background: #ffffff; padding: 20px 20px 40px 20px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 380px; display: flex; flex-direction: column; }
-        .chart-title { font-size: 0.85rem; font-weight: 700; color: #7a0616; margin-bottom: 20px; text-transform: uppercase; }
     </style>
 
     <div class="hero-banner">
@@ -31,11 +27,6 @@
             <div class="col-md-4"><div class="stat-card"><div class="stat-label">Pending Indexing</div><div class="stat-value"><asp:Label ID="lblPendingIndexing" runat="server" Text="0" /></div></div></div>
         </div>
 
-        <div class="row g-3 mb-4">
-            <div class="col-md-8"><div class="chart-card"><div class="chart-title">Document Indexing Trends</div><canvas id="indexingChart"></canvas></div></div>
-            <div class="col-md-4"><div class="chart-card"><div class="chart-title">File Distribution</div><canvas id="fileTypePieChart"></canvas></div></div>
-        </div>
-
         <div class="card p-4 border-0 shadow-sm mb-5" style="border-radius: 4px;">
             <h6 class="text-uppercase fw-bold mb-4" style="color: #7a0616;">User Management Summary</h6>
             <table class="table table-bordered table-hover">
@@ -48,41 +39,4 @@
             </table>
         </div>
     </div>
-
-    <script>
-/* eslint-disable */
-// @ts-nocheck
-const palette = ['#8d071a', '#bdc3c7', '#2c3e50'];
-
-// Line Chart
-new Chart(document.getElementById('indexingChart'), {
-    type: 'line',
-    data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], datasets: [{ data: [12, 19, 3, 5, 48, 53], borderColor: '#8d071a', tension: 0.3, pointRadius: 5, pointHoverRadius: 8 }] },
-    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } } }
-});
-
-// Doughnut Chart
-new Chart(document.getElementById('fileTypePieChart'), {
-    type: 'doughnut',
-    data: { labels: ['PDF', 'DOCX', 'XLSX'], datasets: [{ data: [60, 25, 15], backgroundColor: palette }] },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'right',
-                onClick: function (e, legendItem, legend) {
-                    const index = legendItem.index;
-                    const chart = legend.chart;
-                    if (chart.isDatasetVisible(0)) {
-                        chart.hide(index);
-                    } else {
-                        chart.show(index);
-                    }
-                }
-            }
-        }
-    }
-});
-</script>
 </asp:Content>

@@ -22,14 +22,25 @@ namespace ongc_webapp
             string employeeName =
                 txtEmployeeName.Text.Trim();
 
-            string cpf =
-                txtCPF.Text.Trim();
+            string cpf = txtUsername.Text.Trim();
 
             string department =
                 txtDepartment.Text.Trim();
 
             string username =
                 txtUsername.Text.Trim();
+
+            if (!long.TryParse(username, out _))
+            {
+                ClientScript.RegisterStartupScript(
+                    this.GetType(),
+                    "InvalidCPF",
+                    "alert('CPF must contain only numbers.');",
+                    true
+                );
+
+                return;
+            }
 
             string password =
                 txtPassword.Text.Trim();

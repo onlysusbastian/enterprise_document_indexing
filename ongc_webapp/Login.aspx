@@ -372,10 +372,10 @@
             <!-- Register: account type selector -->
             
             <div class="field-group">
-                <label>User ID / CPF Number</label>
+                <label>CPF Number</label>
                 <div class="input-wrap no-eye">
                     <i class="bi bi-person ico-lead"></i>
-                    <asp:TextBox ID="txtUsername" runat="server" placeholder="Enter your User ID or CPF"></asp:TextBox>
+                    <asp:TextBox ID="txtUsername" runat="server" placeholder="Enter your CPF"></asp:TextBox>
                 </div>
             </div>
 
@@ -423,7 +423,6 @@
 
             <div class="form-footer" id="emp-footer-login">
                 <div class="footer-row">
-                    <button type="button" class="link-btn" onclick="switchEmployeeView('RECOVERY')">Forgot Password?</button>
                     <span>
                         New here?
                         <a href="Register.aspx"

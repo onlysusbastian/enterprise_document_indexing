@@ -245,10 +245,6 @@ namespace ongc_webapp
             GetAllowedMetadataColumns();
             // NULL = all columns allowed
 
-            // Show the "Restricted View" badge if a policy exists
-            if (allowedCols != null && lblAccessBadge != null)
-                lblAccessBadge.Visible = true;
-
             // ── Collect all known metadata keys from the DB ────
             // We query only up to 500 rows to discover column names.
             HashSet<string> visibleKeys =
@@ -363,10 +359,8 @@ namespace ongc_webapp
                 .Split(new char[] { ' ' },
                     StringSplitOptions.RemoveEmptyEntries)
                 .Distinct()
-                .Take(3)
+                .Take(6)
                 .ToList();
-
-            string searchMode = rblSearchMode.SelectedValue; // "OR" or "AND"
 
             // ── Build SQL ──────────────────────────────────────
             string query = @"
@@ -375,51 +369,59 @@ namespace ongc_webapp
                     source_excel_file,
                     file_name,
                     file_path,
-                    dynamic_metadata
+                    dynamic_metadata,
+                    0 as relevance
                 FROM indexed_documents
                 WHERE 1=1";
+
+            string relevanceExpression = "0";
 
             List<string> whereConditions = new List<string>();
 
             if (keywords.Count > 0)
             {
-                List<string> kwConditions =
+                HashSet<string> visibleColumns =
+                    GetAllowedMetadataColumns();
+
+                List<string> vectorParts =
                     new List<string>();
 
-                HashSet<string> searchableColumns =
-    GetAllowedMetadataColumns();
+                vectorParts.Add(
+                    "to_tsvector('simple', COALESCE(file_name,''))");
 
-                for (int i = 0; i < keywords.Count; i++)
+                vectorParts.Add(
+                    "to_tsvector('simple', COALESCE(extracted_text,''))");
+
+                foreach (string col in visibleColumns)
                 {
-                    List<string> keywordSearchParts =
-                        new List<string>();
-
-                    keywordSearchParts.Add(
-                        "file_name ILIKE @kw" + i);
-
-                    foreach (string col in searchableColumns)
-                    {
-                        keywordSearchParts.Add(
-                            "dynamic_metadata->>'" +
-                            col.Replace("'", "") +
-                            "' ILIKE @kw" + i);
-                    }
-
-                    kwConditions.Add(
-                        "(" +
-                        string.Join(
-                            " OR ",
-                            keywordSearchParts) +
-                        ")");
+                    vectorParts.Add(
+                        "to_tsvector('simple', COALESCE(dynamic_metadata->>'" +
+                        col.Replace("'", "") +
+                        "',''))");
                 }
 
-                whereConditions.Add(
+                string userSearchVector =
                     "(" +
-                    string.Join(
-                        " " + searchMode + " ",
-                        kwConditions) +
-                    ")");
+                    string.Join(" || ", vectorParts) +
+                    ")";
+
+                whereConditions.Add(
+                    userSearchVector +
+                    @" @@ websearch_to_tsquery(
+                'simple',
+                @searchText)");
+
+                relevanceExpression =
+                    @"ts_rank(
+            " + userSearchVector + @",
+            websearch_to_tsquery(
+                'simple',
+                @searchText
+            )
+            )";
             }
+            
+           
 
             List<string> allowedDatasets =
             GetAllowedDatasets();
@@ -526,7 +528,12 @@ namespace ongc_webapp
             if (whereConditions.Count > 0)
                 query += " AND " + string.Join(" AND ", whereConditions);
 
-                string countQuery =
+            query =
+            query.Replace(
+                "0 as relevance",
+                relevanceExpression + " as relevance");
+
+            string countQuery =
                 @"SELECT COUNT(*)
                   FROM indexed_documents
                   WHERE 1=1";
@@ -544,7 +551,7 @@ namespace ongc_webapp
                 (CurrentPage - 1) * pageSize;
 
             query +=
-                " ORDER BY uploaded_at DESC " +
+                " ORDER BY relevance DESC, uploaded_at DESC " +
                 " LIMIT @limit " +
                 " OFFSET @offset";
 
@@ -590,15 +597,6 @@ namespace ongc_webapp
                         "'" + allowedDatasets[i] + "'");
             }
 
-            for (int i = 0; i < keywords.Count; i++)
-            {
-                displayQuery =
-                    displayQuery.Replace(
-                        "@kw" + i,
-                        "'%" + keywords[i] + "%'");
-
-            }
-
             litSqlQuery.Text =
                 "<div class='sql-query-bar'>" +
                 Server.HtmlEncode(displayQuery) +
@@ -618,18 +616,18 @@ namespace ongc_webapp
                     using (NpgsqlCommand countCmd =
                         new NpgsqlCommand(countQuery, conn))
                     {
+                        if (keywords.Count > 0)
+                        {
+                            countCmd.Parameters.AddWithValue(
+                                "searchText",
+                                string.Join(" ", keywords));
+                        }
+
                         for (int i = 0; i < allowedDatasets.Count; i++)
                         {
                             countCmd.Parameters.AddWithValue(
                                 "dataset" + i,
                                 allowedDatasets[i]);
-                        }
-
-                        for (int i = 0; i < keywords.Count; i++)
-                        {
-                            countCmd.Parameters.AddWithValue(
-                                "kw" + i,
-                                "%" + keywords[i] + "%");
                         }
 
                         metadataIndex = 0;
@@ -673,6 +671,14 @@ namespace ongc_webapp
                     using (NpgsqlCommand cmd =
                         new NpgsqlCommand(query, conn))
                     {
+
+                        if (keywords.Count > 0)
+                        {
+                            cmd.Parameters.AddWithValue(
+                                "searchText",
+                                string.Join(" ", keywords));
+                        }
+
                         // Bind dataset security parameters
 
                         for (int i = 0;
@@ -730,12 +736,6 @@ namespace ongc_webapp
 
 
                         // Bind keyword parameters
-                        for (int i = 0; i < keywords.Count; i++)
-                        {
-                            cmd.Parameters.AddWithValue(
-                                "kw" + i,
-                                "%" + keywords[i] + "%");
-                        }
 
                         using (NpgsqlDataReader reader = cmd.ExecuteReader())
                         {

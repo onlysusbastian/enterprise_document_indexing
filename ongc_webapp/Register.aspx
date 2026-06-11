@@ -94,9 +94,8 @@
                 <asp:Label ID="lblStatus" runat="server" CssClass="status" />
 
                 <div class="form-group"><label>Full Name</label><asp:TextBox ID="txtEmployeeName" runat="server" CssClass="form-control" placeholder="Enter full name" /></div>
-                <div class="form-group"><label>CPF Number</label><asp:TextBox ID="txtCPF" runat="server" CssClass="form-control" placeholder="Enter CPF" /></div>
                 <div class="form-group"><label>Department</label><asp:TextBox ID="txtDepartment" runat="server" CssClass="form-control" placeholder="Enter department" /></div>
-                <div class="form-group"><label>Username</label><asp:TextBox ID="txtUsername" runat="server" CssClass="form-control" placeholder="Create username" /></div>
+                <div class="form-group"><label>CPF</label><asp:TextBox ID="txtUsername" runat="server" CssClass="form-control" placeholder="Enter CPF" /></div>
                 <div class="form-group"><label>Password</label><asp:TextBox ID="txtPassword" runat="server" TextMode="Password" CssClass="form-control" placeholder="Enter password" /></div>
                 <div class="form-group"><label>Confirm Password</label><asp:TextBox ID="txtConfirmPassword" runat="server" TextMode="Password" CssClass="form-control" placeholder="Confirm password" /></div>
 
