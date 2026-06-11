@@ -586,7 +586,7 @@ namespace ongc_webapp
                 search_query
             FROM user_activity_logs
             ORDER BY created_at DESC
-            LIMIT 500";
+            LIMIT 100";
 
                 using (NpgsqlDataAdapter da =
                     new NpgsqlDataAdapter(sql, conn))
