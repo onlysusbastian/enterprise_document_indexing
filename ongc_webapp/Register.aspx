@@ -35,9 +35,6 @@
             padding: 24px 16px;
         }
 
-        /* ════════════════════════════════════════
-           SHELL
-           ════════════════════════════════════════ */
         .login-shell {
             width: 100%;
             max-width: 1160px;
@@ -50,13 +47,10 @@
             align-self: flex-start;
         }
 
-        /* ════════════════════════════════════════
-           VISUAL PANEL
-           ════════════════════════════════════════ */
         .visual-panel {
             flex: 1.2;
             position: relative;
-            background: url('images/ongc_refinery.jpg') center 25% / cover no-repeat;
+            background: url('ongc_refinery.jpg') center 25% / cover no-repeat;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -78,11 +72,9 @@
         }
         .visual-bottom p { font-size: 0.9rem; font-weight: 400; line-height: 1.6; }
 
-        /* ════════════════════════════════════════
-           FORM PANEL
-           ════════════════════════════════════════ */
+
         .form-panel {
-            flex: 0 0 480px;
+            flex: 0 0 520px;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
@@ -151,10 +143,11 @@
         }
         .back-link:hover { color: var(--maroon); }
 
-        /* ════════════════════════════════════════
-           FIELD GROUPS
-           ════════════════════════════════════════ */
-        .field-group { margin-bottom: 14px; }
+
+        .field-group {
+            margin-bottom: 20px;
+            margin-right: 12px;
+        }
 
         .field-group label {
             display: block;
@@ -253,7 +246,7 @@
             border: none; border-radius: 9px;
             color: #fff; font-weight: 700;
             font-size: 0.93rem; letter-spacing: .05em;
-            cursor: pointer; margin-top: 8px;
+            cursor: pointer; margin-top: 20px;
             transition: background .2s, box-shadow .2s, transform .1s;
         }
         .btn-submit:hover  { background: var(--maroon-mid); box-shadow: 0 6px 20px rgba(128,0,0,0.28); }
